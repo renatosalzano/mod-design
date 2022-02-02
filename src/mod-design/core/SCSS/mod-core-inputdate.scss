@@ -1,0 +1,21 @@
+.mod-inputdate {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0 8px;
+  .mod-input-core {
+    box-sizing: content-box;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: "Roboto Mono", monospace;
+    caret-color: transparent;
+    &#mod-input-year {
+      width: 4ch;
+    }
+    &#mod-input-month,
+    &#mod-input-day {
+      width: 2ch;
+    }
+  }
+}

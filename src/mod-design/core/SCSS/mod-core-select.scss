@@ -1,0 +1,240 @@
+.mod-select {
+  --border-width: 2px;
+  --maxOptions: 8;
+  --iconColor: var(--idle-col);
+  &.mod-error {
+    --iconColor: var(--error-col);
+  }
+  .mod-input-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+  .trigger {
+    position: fixed;
+    inset: 0 0 0 0;
+  }
+}
+
+.mod-input-text {
+  flex: 1;
+  cursor: pointer;
+}
+
+.mod-input-filter {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 4px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--hover-col);
+  z-index: 1200;
+}
+
+.mod-input {
+  display: flex;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+
+.mod-filter-icon {
+  flex-shrink: 0;
+  color: var(--idle-col);
+  width: 24px;
+  height: 24px;
+}
+
+.mod-inset-filter {
+  position: absolute;
+  top: 8px;
+  right: 22px;
+  border-radius: 4px;
+  box-shadow: 1px 1px rgba(48, 48, 48, 0.4);
+  color: white;
+  background-color: var(--main-col);
+  opacity: 0;
+  z-index: 2000;
+  pointer-events: none;
+  &.mod-floating {
+    opacity: 1;
+    pointer-events: initial;
+  }
+  .mod-floating-text {
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 8px;
+    padding-right: 8px;
+    max-width: 120px;
+    font-size: 14px;
+    z-index: 2100;
+    transition: all 0.2s ease-out;
+    cursor: pointer;
+    .mod-floating-icon {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+      right: -40px;
+      width: 40px;
+      transition: all 0.2s ease-out;
+      .mod-fatfilter-icon,
+      .mod-close-icon {
+        display: block;
+        width: 18px;
+        height: 18px;
+        color: white;
+      }
+    }
+    &:hover {
+      padding-right: 40px;
+      .mod-floating-icon {
+        right: 0;
+      }
+    }
+  }
+  .mod-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .mod-filter-icon {
+    display: none;
+  }
+}
+
+.mod-inset-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+  color: var(--idle-col);
+}
+
+.mod-multiple {
+  --chipHeight: 24px;
+  --chipMargin: 4px;
+  --chipPadding: 7px 12px;
+  .mod-border {
+    position: relative;
+    flex-wrap: wrap;
+    width: 100%;
+    padding-right: 40px;
+    .mod-flex-wrap {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 34px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      .mod-input-wrap {
+        position: relative;
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+        cursor: pointer;
+        --iconBg: transparent;
+        &:hover {
+          --iconBg: var(--hover-col);
+        }
+        .mod-input-text {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          right: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          z-index: 500;
+        }
+        .mod-inset-icon {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          height: 100%;
+          padding: 7px;
+          border-radius: 50%;
+          color: var(--iconColor);
+          background-color: var(--iconBg);
+        }
+      }
+    }
+  }
+}
+
+.mod-select-arrow {
+  transform: rotate(0deg);
+  &.flip-arrow {
+    transform: rotate(180deg);
+  }
+}
+.mod-list {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  list-style: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--borderRadius);
+  box-shadow: 0 4px 8px rgba(48, 48, 48, 0.4);
+  z-index: 1000;
+  .mod-scroll-containter {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    max-height: calc(var(--maxOptions) * var(--height));
+  }
+}
+
+.mod-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 14px;
+  height: var(--height);
+  cursor: pointer;
+  &:hover,
+  &.mod-active {
+    background-color: var(--hover-col);
+  }
+  &.mod-selected {
+    font-weight: 500;
+  }
+  &.disabled {
+    background-color: transparent;
+    color: rgba(48, 48, 48, 0.4);
+    pointer-events: none;
+  }
+  .mod-option-bg {
+    position: absolute;
+    inset: 0 0 0 0;
+    background-color: var(--main-col);
+    opacity: 0.2;
+    z-index: -10;
+  }
+  .mod-option-label {
+    position: relative;
+    font-size: 14px;
+    z-index: 200;
+  }
+}

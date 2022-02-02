@@ -1,0 +1,71 @@
+.mod-button {
+  display: flex;
+  align-items: center;
+  outline: none;
+  border: none;
+  user-select: none;
+  background-color: transparent;
+  height: 40px;
+  min-width: 40px;
+  font-size: 14px;
+  font-family: "Roboto", sans-serif;
+  gap: 4px;
+  border-radius: 4px;
+  transform: translate3d(0, 0, 0);
+  transition: all ease-out 0.2s;
+  cursor: pointer;
+}
+
+.mat-button-base {
+  min-height: 36px;
+  padding: 0px 16px;
+}
+.mod-primary {
+  background-color: var(--main-col);
+  color: #fff;
+  font-weight: 500;
+}
+
+.mod-hover:hover {
+  background-color: var(--hover-col);
+}
+
+/* 
+  MATERIAL ARROW
+*/
+
+.mod-arrow-shape {
+  box-sizing: unset;
+  display: block;
+  height: 7px;
+  width: 7px;
+  margin: 15.5px;
+  border-top: 2px solid var(--idle-col);
+  border-left: 2px solid var(--idle-col);
+  transform: rotate(-45deg);
+}
+
+.mod-arrow-R {
+  transform: rotate(180deg);
+}
+
+.mod-arrow-L,
+.mod-arrow-R,
+.mod-arrow-U,
+.mod-arrow-D {
+  outline: none;
+  border: none;
+  background-color: transparent;
+  box-sizing: unset;
+  padding: 0;
+  margin: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  transition: all ease-out 0.2s;
+  cursor: pointer;
+  &.mod-disabled {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+}
