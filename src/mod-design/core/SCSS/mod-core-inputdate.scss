@@ -10,12 +10,20 @@
     font-size: 14px;
     font-family: "Roboto Mono", monospace;
     caret-color: transparent;
-    &#mod-input-year {
+    &#Y {
       width: 4ch;
     }
-    &#mod-input-month,
-    &#mod-input-day {
+    &#M,
+    &#D {
       width: 2ch;
     }
   }
+}
+
+.mod-inputdate-range {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 4px;
 }

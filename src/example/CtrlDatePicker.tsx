@@ -34,7 +34,7 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
 
   return (
     <DatePicker
-      range="2-calendar"
+      range
       name="DATEPICKER"
       value={dateRange}
       onChange={handleDateRange}
@@ -45,7 +45,7 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
         weekday: "short",
         headerButton: "2-button",
         headerRange: { startDate: "data di inizio", endDate: "data di fine" },
-        monthOption: { button: "long", calendar: "long" },
+        monthOption: { button: "long", calendar: "short" },
         actionButton: {
           apply: "Conferma",
           cancel: "Annulla",

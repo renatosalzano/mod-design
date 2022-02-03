@@ -1,4 +1,5 @@
 .mod-datepicker {
+  min-width: 260px;
   --calendarFontColor: #000000de;
   --calendarShadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024,
     0 1px 10px #0000001f;
@@ -103,7 +104,7 @@
 
 .mod-selector {
   user-select: none;
-  box-sizing: margin-box;
+  box-sizing: unset;
   position: relative;
   display: flex;
   justify-content: center;
@@ -124,10 +125,10 @@
   .mod-insert-border {
     pointer-events: none;
     position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    right: 2px;
+    top: -1px;
+    bottom: -1px;
+    left: -1px;
+    right: -1px;
     border-radius: 20px;
     border: 1px solid var(--selectorBorderColor);
     z-index: -1;
@@ -196,6 +197,9 @@
       border-radius: 20px 0 0 20px;
     }
   } */
+  &.mod-selected {
+    --selectorBorderColor: var(--idle-col);
+  }
   &.mod-disabled {
     pointer-events: none;
     color: rgba(0, 0, 0, 0.3);
@@ -229,11 +233,6 @@
   border-radius: 8px;
   box-shadow: var(--calendarShadow);
   z-index: 1000;
-  transform-origin: top;
-  animation: open 0.2s ease-out forwards;
-  &.mod-close {
-    animation: close 0.1s ease-out forwards;
-  }
 }
 .mod-calendar-range-header {
   position: relative;
@@ -252,11 +251,13 @@
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
+    transition: all 150ms ease-out;
     z-index: 2000;
+
     &.mod-idle-tab {
       color: #fff;
       background-color: var(--main-col);
-      transform: translateY(16px);
+      transform: translateY(14px);
       &:hover {
         transform: translateY(0);
       }
@@ -311,9 +312,8 @@
 .mod-calendar-wrap {
   display: flex;
   width: 296px;
-  transition: transform 0.1s ease-out;
-  transform: translate3d(0, 0, 0);
-
+  transition: all 200ms ease-out;
+  transform: translateZ(0);
   &.mod-double-calendar {
     width: 592px;
   }
@@ -343,8 +343,14 @@
   bottom: 57px;
   border-right: 1px dashed rgba(0, 0, 0, 0.1);
 }
-
-@keyframes open {
+.mod-animation-fadein {
+  transform-origin: top;
+  animation: fadein 100ms ease-out forwards;
+  &.mod-animation-fadeout {
+    animation: fadeout 100ms ease-out forwards;
+  }
+}
+@keyframes fadein {
   0% {
     opacity: 0;
     transform: scaleY(0.8);
@@ -354,7 +360,7 @@
     transform: scaleY(1);
   }
 }
-@keyframes close {
+@keyframes fadeout {
   0% {
     opacity: 1;
   }

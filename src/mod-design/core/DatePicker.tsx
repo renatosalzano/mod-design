@@ -20,11 +20,8 @@ import InputDate from "./InputDate";
 import { ArrowIcon, CalendarIcon } from "../icons";
 import "./SCSS/mod-core-datepicker.scss";
 import { useScrollBlock } from "../utils/blockScroll";
-
-interface DateRange {
-  min: Date | null;
-  max: Date | null;
-}
+import { DateRange, isValidDateRange } from "../utils/DateRange";
+import { isEqualDate } from "../utils/testDate";
 type OnChangeFlat = (value: Date | null) => void;
 type OnChangeRange = (value: DateRange) => void;
 type OnChange = OnChangeFlat | OnChangeRange;
@@ -51,6 +48,7 @@ interface Props extends CoreProps {
   openTo?: "day" | "month" | "year";
   dateFormat?: DateFormat;
   dateSeparator?: DateSeparator;
+  rangeSeparator?: string;
   localization?: string;
   dayOffset?: 0 | 1;
   minDate?: Date;
@@ -72,6 +70,7 @@ const DatePicker: FC<Props & Range> = ({
   dayOffset = 1,
   dateFormat = "D/M/Y",
   dateSeparator = "/",
+  rangeSeparator,
   option = {
     weekday: "narrow",
     monthOption: { button: "long", calendar: "short" },
@@ -111,6 +110,7 @@ const DatePicker: FC<Props & Range> = ({
             maxDate={maxDate}
             dateFormat={dateFormat}
             dateSeparator={dateSeparator}
+            rangeSeparator={rangeSeparator}
             range={range}
             onIconClick={() => setDropdown(true)}
             onIconTouch={() => null}
@@ -134,7 +134,7 @@ const DatePicker: FC<Props & Range> = ({
 export default DatePicker;
 interface GetConstProps {
   date: Date;
-  dateRange: { min: Date; max: Date };
+  dateRange: DateRange;
   range?: true | "2-calendar";
   locale: string;
   dayOffset: 0 | 1;
@@ -261,9 +261,10 @@ interface DatePickerInputProps {
   date: Date;
   minDate: Date | null;
   maxDate: Date | null;
-  dateRange: { min: Date; max: Date };
+  dateRange: DateRange;
   dateFormat?: DateFormat;
   dateSeparator?: DateSeparator;
+  rangeSeparator?: string;
   range?: boolean | "2-calendar";
   onIconClick: () => void;
   onIconTouch: () => void;
@@ -274,85 +275,27 @@ const DatePickerInput: FC<DatePickerInputProps> = ({
   dateRange,
   minDate,
   maxDate,
-  range,
   dateFormat,
   dateSeparator,
+  rangeSeparator,
   onIconClick,
   onIconTouch,
 }) => {
-  function renderInput() {
-    if (range) {
-      return (
-        <InputDateRange
-          name={name}
-          defaultMinDate={minDate}
-          defaultMaxDate={maxDate}
-          minValue={dateRange.min}
-          maxValue={dateRange.max}
-          dateFormat={dateFormat}
-          dateSeparator={dateSeparator}
-        />
-      );
-    } else {
-      return (
-        <InputDate
-          name={name}
-          value={date}
-          minDate={minDate}
-          maxDate={maxDate}
-          dateFormat={dateFormat}
-          dateSeparator={dateSeparator}
-        />
-      );
-    }
-  }
+  const { rangeMode } = useGetConst();
   return (
     <div className="mod-inputdate-wrap">
-      {renderInput()}
+      <InputDate
+        range={rangeMode}
+        name={name}
+        value={rangeMode ? dateRange : date}
+        minDate={minDate}
+        maxDate={maxDate}
+        dateFormat={dateFormat}
+        dateSeparator={dateSeparator}
+        rangeSeparator={rangeSeparator}
+      />
       <DatePickerIcon onIconClick={onIconClick} onIconTouch={onIconTouch} />
     </div>
-  );
-};
-interface InputDateRangeProps {
-  name: string;
-  minValue: Date | null;
-  maxValue: Date | null;
-  defaultMinDate: Date | null;
-  defaultMaxDate: Date | null;
-  dateFormat?: DateFormat;
-  dateSeparator?: DateSeparator;
-}
-const InputDateRange: FC<InputDateRangeProps> = ({
-  name,
-  minValue,
-  maxValue,
-  defaultMinDate,
-  defaultMaxDate,
-  dateFormat,
-  dateSeparator,
-}) => {
-  const [minDate, setMinDate] = useState(minValue);
-  const [maxDate, setMaxDate] = useState(maxValue);
-  return (
-    <Fragment>
-      <InputDate
-        name={`min-${name}`}
-        value={minValue}
-        dateFormat={dateFormat}
-        dateSeparator={dateSeparator}
-        minDate={defaultMinDate}
-        maxDate={maxDate}
-      />
-      <div>{" - "}</div>
-      <InputDate
-        name={`max-${name}`}
-        value={maxValue}
-        dateFormat={dateFormat}
-        dateSeparator={dateSeparator}
-        minDate={minDate}
-        maxDate={defaultMaxDate}
-      />
-    </Fragment>
   );
 };
 
@@ -390,7 +333,7 @@ interface DatePickerDropdownProps {
   date: Date;
   minDate: Date | null;
   maxDate: Date | null;
-  dateRange: { min: Date; max: Date };
+  dateRange: DateRange;
   range?: boolean | "2-calendar";
   openTo: Mode;
   dropdown: boolean;
@@ -407,6 +350,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
   setDropdown,
 }) => {
   const {
+    rangeMode,
     startYear,
     startYearRange,
     headerRange,
@@ -414,7 +358,14 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
     actionButtonOption,
     onChange,
   } = useGetConst();
-  const handleTrigger = () => setDropdown(true);
+  const [isClose, setClose] = useState(false);
+  const closeDropdown = useRef(() => {
+    setClose(true);
+    setTimeout(() => {
+      setDropdown(false);
+      setClose(false);
+    }, 100);
+  }).current;
 
   function render() {
     if (range) {
@@ -427,7 +378,8 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
           defaultMinDate={minDate}
           defaultMaxDate={maxDate}
           startYearRange={startYearRange}
-          setDropdown={setDropdown}
+          isClose={isClose}
+          closeDropdown={closeDropdown}
           actionButton={actionButton}
           actionButtonOption={actionButtonOption}
           onChange={onChange}
@@ -441,7 +393,8 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
           maxDate={maxDate}
           openTo={openTo}
           startYear={startYear}
-          setDropdown={setDropdown}
+          isClose={isClose}
+          closeDropdown={closeDropdown}
           actionButton={actionButton}
           actionButtonOption={actionButtonOption}
         />
@@ -451,7 +404,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
   return (
     <div className="mod-dropdown-container">
       {dropdown && render()}
-      {dropdown && <div className="mod-trigger" onClick={handleTrigger} />}
+      {dropdown && <div className="mod-trigger" onClick={closeDropdown} />}
     </div>
   );
 };
@@ -464,7 +417,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
 
 interface CalendarRangeProps {
   range: "2-calendar" | true;
-  dateRange: { min: Date; max: Date };
+  dateRange: DateRange;
   headerRange?: { startDate: string; endDate: string };
   openTo: Mode;
   defaultMinDate: Date | null;
@@ -472,7 +425,8 @@ interface CalendarRangeProps {
   startYearRange: { min: number; max: number };
   actionButton: boolean;
   actionButtonOption?: { cancel: string; apply: string; back: string };
-  setDropdown: Dispatch<SetStateAction<boolean>>;
+  isClose: boolean;
+  closeDropdown: () => void;
   onChange: OnChange;
 }
 
@@ -484,13 +438,14 @@ const CalendarRange: FC<CalendarRangeProps> = ({
   defaultMinDate,
   defaultMaxDate,
   startYearRange,
-  setDropdown,
+  isClose,
+  closeDropdown,
   onChange,
 }) => {
   const { actionButton, actionButtonOption } = useGetConst();
   const [rangeMode, setRangeMode] = useState<"start" | "end">("start");
-  const [minDate, setMinDate] = useState(dateRange.min);
-  const [maxDate, setMaxDate] = useState(dateRange.max);
+  const [minDate, setMinDate] = useState(dateRange.min as Date);
+  const [maxDate, setMaxDate] = useState(dateRange.max as Date);
 
   const handleStartSelectorClick = useCallback(
     (value: any, range: "min" | "max", type: Mode, index: string) => {
@@ -525,17 +480,12 @@ const CalendarRange: FC<CalendarRangeProps> = ({
     [maxDate],
   );
 
-  const [close, setClose] = useState(false);
-  const handleCancelButton = useCallback(() => {
-    setClose(true);
-    setTimeout(() => setDropdown(false), 100);
-  }, [setDropdown]);
+  const handleCancelButton = useCallback(closeDropdown, [closeDropdown]);
   const handleApplyButton = useCallback(() => {
     const value: any = { min: minDate, max: maxDate };
     onChange(value);
-    setClose(true);
-    setTimeout(() => setDropdown(false), 100);
-  }, [maxDate, minDate, onChange, setDropdown]);
+    closeDropdown();
+  }, [maxDate, minDate, onChange, closeDropdown]);
 
   function setClassName() {
     let classname = "mod-calendar-wrap";
@@ -544,12 +494,13 @@ const CalendarRange: FC<CalendarRangeProps> = ({
     if (range === true && rangeMode === "end") classname += " mod-end-date";
     return classname;
   }
-  function setCloseClass() {
-    if (close) return "mod-calendar-range mod-close";
-    else return "mod-calendar-range";
+  function setAnimationClass() {
+    let classname = "mod-calendar-range mod-animation-fadein";
+    if (isClose) classname += " mod-animation-fadeout";
+    return classname;
   }
   return (
-    <div className={setCloseClass()}>
+    <div className={setAnimationClass()}>
       {range === true ? (
         <CalendarRangeHeader
           headerRange={headerRange}
@@ -572,20 +523,21 @@ const CalendarRange: FC<CalendarRangeProps> = ({
           maxDate={maxDate}
           startYear={startYearRange.min}
           openTo={openTo}
-          setDropdown={setDropdown}
+          isClose={isClose}
+          closeDropdown={closeDropdown}
           handleSelectorClick={handleStartSelectorClick}
           rangeIndex="min"
           rangeMinDate={minDate}
           rangeMaxDate={maxDate}
         />
-
         <Calendar
           date={maxDate}
           minDate={minDate}
           maxDate={defaultMaxDate}
           openTo={openTo}
           startYear={startYearRange.max}
-          setDropdown={setDropdown}
+          isClose={isClose}
+          closeDropdown={closeDropdown}
           handleSelectorClick={handleEndSelectorClick}
           rangeIndex="max"
           rangeMinDate={minDate}
@@ -744,8 +696,9 @@ interface CalendarProps {
   rangeIndex?: "min" | "max";
   rangeMinDate?: Date;
   rangeMaxDate?: Date;
+  isClose: boolean;
   handleSelectorClick?: HandleSelectorClick;
-  setDropdown: Dispatch<SetStateAction<boolean>>;
+  closeDropdown: () => void;
 }
 const Calendar: FC<CalendarProps> = ({
   date,
@@ -756,8 +709,9 @@ const Calendar: FC<CalendarProps> = ({
   rangeIndex,
   rangeMinDate,
   rangeMaxDate,
+  isClose,
   handleSelectorClick,
-  setDropdown,
+  closeDropdown,
 }) => {
   const { allowScroll, blockScroll } = useScrollBlock();
   const { actionButton, actionButtonOption } = useGetConst();
@@ -778,11 +732,12 @@ const Calendar: FC<CalendarProps> = ({
       mode={mode}
       startYear={startYear}
       setMode={setMode}
-      setDropdown={setDropdown}
       rangeIndex={rangeIndex}
       rangeMinDate={rangeMinDate}
       rangeMaxDate={rangeMaxDate}
-      handleSelectorClick={handleSelectorClick}>
+      handleSelectorClick={handleSelectorClick}
+      closeDropdown={closeDropdown}
+      isClose={isClose}>
       <CalendarHeader mode={mode} />
       <CalendarSeparator mode={mode} />
       <CalendarContent mode={mode} />
@@ -1038,7 +993,7 @@ const Selector: FC<SelectorProps> = memo(
     const { setSelector, activeSelector } = useGetConst();
     const { handleSelector, rangeIndex } = useCalendarCore();
     function init() {
-      return activeSelector[rangeIndex][type] === indexSelector || select;
+      return activeSelector[rangeIndex][type] === indexSelector;
     }
     const [focus, setFocus] = useState(false);
     const [selected, setSelected] = useState(init);
@@ -1075,7 +1030,8 @@ const Selector: FC<SelectorProps> = memo(
 
     function setClassName() {
       let classname = "mod-selector";
-      if (selected) classname += ` mod-selected-${rangeIndex}-${path}`;
+      if (selected) classname += ` mod-selected`;
+      if (select && path) classname += ` mod-selected-${rangeIndex}-${path}`;
       if (focus) classname += " mod-active";
       if (path) classname += ` mod-path-${rangeIndex}-${path}`;
       if (disabled) classname += " mod-disabled";
@@ -1125,8 +1081,9 @@ interface CalendarCoreProps {
   rangeIndex?: "min" | "max";
   rangeMinDate?: Date;
   rangeMaxDate?: Date;
+  isClose: boolean;
   setMode: Dispatch<SetStateAction<Mode>>;
-  setDropdown: Dispatch<SetStateAction<boolean>>;
+  closeDropdown: () => void;
   handleSelectorClick?: HandleSelector;
 }
 
@@ -1142,8 +1099,9 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   rangeIndex = "min",
   rangeMinDate,
   rangeMaxDate,
+  isClose,
   setMode,
-  setDropdown,
+  closeDropdown,
   handleSelectorClick = undefined,
   children,
 }) => {
@@ -1157,6 +1115,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     actionButton,
     monthButton,
     rangeMode,
+    onChange,
   } = useGetConst();
 
   /* ----- SETTERS -------------------------------------------------------- */
@@ -1473,9 +1432,14 @@ const CalendarCore: FC<CalendarCoreProps> = ({
 
   const selectDay = useCallback(
     (value: Date, index: string) => {
-      activeSelector[rangeIndex][mode] = index;
+      if (actionButton || rangeMode) {
+      } else {
+        const payload: any = value;
+        onChange(payload);
+        closeDropdown();
+      }
     },
-    [activeSelector],
+    [actionButton, closeDropdown, onChange, rangeMode],
   );
 
   const handleSelector = useCallback(
@@ -1524,11 +1488,11 @@ const CalendarCore: FC<CalendarCoreProps> = ({
 
   const handleCancel = useCallback(() => {
     if (mode === "day") {
-      setDropdown(false);
+      closeDropdown();
     } else {
       setDay();
     }
-  }, [mode, setDay, setDropdown]);
+  }, [mode, setDay, closeDropdown]);
   const handleApply = useCallback(() => {
     switch (mode) {
       case "year":
@@ -1615,8 +1579,19 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     init.current();
   }, []);
 
+  function setClassName() {
+    let classname = "mod-calendar";
+    if (rangeMode) {
+      return classname;
+    } else {
+      classname += " mod-animation-fadein";
+      if (isClose) classname += " mod-animation-fadeout";
+      return classname;
+    }
+  }
+
   return (
-    <div className="mod-calendar">
+    <div className={setClassName()}>
       {createElement(
         DatePickerContext.Provider,
         {
@@ -1967,12 +1942,12 @@ const useInitYear = (value: Date) => {
   return { startYear };
 };
 
-const useInitRangeYear = (date: { min: Date; max: Date }) => {
+const useInitRangeYear = (dateRange: DateRange) => {
   const initState = useCallback(() => {
-    const min = initYear(date.min.getFullYear());
-    const max = initYear(date.max.getFullYear());
+    const min = initYear(dateRange.getIndexDateMin().year);
+    const max = initYear(dateRange.getIndexDateMax().year);
     return { min, max };
-  }, [date.max, date.min]);
+  }, [dateRange]);
 
   const [startYearRange] = useState<{ min: number; max: number }>(initState);
   return { startYearRange };
@@ -2043,7 +2018,7 @@ const useGetWeekday = (
 type ReturnCheckProps = [
   boolean,
   Date,
-  { min: Date; max: Date },
+  DateRange,
   Date | null,
   string,
   boolean,
@@ -2062,10 +2037,9 @@ const useCheckProps = (
   const [internalError, setError] = useState(false);
   const [locale, setLocale] = useState<string>("");
   const [date, setDate] = useState<Date>(today);
-  const [dateRange, setDateRange] = useState<{ min: Date; max: Date }>({
-    min: today,
-    max: today,
-  });
+  const [dateRange, setDateRange] = useState<DateRange>(
+    new DateRange(today, today),
+  );
   const [defMinDate, setMinDate] = useState<Date | null>(minDate);
 
   const inputName = useRef(`INVALID PROPS\nINPUT NAME: ${name}`);
@@ -2099,7 +2073,7 @@ const useCheckProps = (
   });
   const checkRangeValue = useRef((value: any) => {
     if (internalError) return;
-    if (!isDateRange(value)) return;
+    if (!isValidDateRange(value)) return;
     const override = { ...dateRange };
     let warnMessage = "";
 
@@ -2138,7 +2112,8 @@ const useCheckProps = (
     if (warnMessage) {
       console.warn(warnMessage);
     }
-    setDateRange(override);
+    const { min, max } = override;
+    setDateRange(new DateRange(min, max));
   });
   const checkNameError = () => {
     let errorName = "";
@@ -2176,7 +2151,7 @@ const useCheckProps = (
         errorMessage = `\nERROR: <DatePicker range={ ${rangeError} } />`;
         throw new Error(inputName.current + errorMessage);
       }
-      if (!isDateRange(value)) {
+      if (!isValidDateRange(value)) {
         errorMessage = `\nERROR: <DatePicker range value={\n\tMUST BE {min: Date | null, max: Date | null} } />`;
         throw new Error(inputName.current + errorMessage);
       }
@@ -2229,31 +2204,6 @@ function testLocale(locale?: string) {
   }
 }
 
-function isDate(date: any) {
-  if (date instanceof Date) {
-    if (isNaN(date.getTime())) {
-      // ERROR
-      return false;
-    } else {
-      return true;
-    }
-  } else return false;
-}
-
-function isDateRange(date: any) {
-  try {
-    const minCond = date.min instanceof Date || date.min === null;
-    const maxCond = date.max instanceof Date || date.max === null;
-    return minCond && maxCond;
-  } catch (err) {
-    return false;
-  }
-}
-function isEqualDate(_x: Date, _y: Date) {
-  const x = new Date(_x).getTime();
-  const y = new Date(_y).getTime();
-  return x === y;
-}
 function isEqualMonth(_x: Date, _y: Date) {
   const x = new Date(_x);
   const y = new Date(_y);
