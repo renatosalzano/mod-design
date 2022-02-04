@@ -4,18 +4,34 @@
   max-width: 100%;
   padding: 0 8px;
   .mod-input-core {
+    position: relative;
     box-sizing: content-box;
     border: none;
     outline: none;
     font-size: 14px;
     font-family: "Roboto Mono", monospace;
     caret-color: transparent;
+    cursor: default;
+    z-index: 1000;
     &#Y {
       width: 4ch;
     }
     &#M,
     &#D {
       width: 2ch;
+    }
+    &.mod-active,
+    ::selection {
+      color: #fff;
+      background-color: var(--mainColor);
+    }
+    &.mod-readonly {
+      user-select: none;
+      pointer-events: none;
+    }
+    &.mod-disabled {
+      pointer-events: none;
+      opacity: 0.3;
     }
   }
 }
@@ -26,4 +42,5 @@
   align-items: center;
   width: 100%;
   gap: 4px;
+  cursor: default;
 }

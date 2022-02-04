@@ -4,7 +4,7 @@
   --calendarShadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024,
     0 1px 10px #0000001f;
   --calendarHeight: 350px;
-  --contentHeaderColor: var(--idle-col);
+  --contentHeaderColor: var(--idleColor);
   --contentFontSize: 13px;
   --contentBorderRadius: 20px;
 
@@ -41,9 +41,15 @@
   top: 0;
   min-width: 296px;
   min-height: var(--calendarHeight);
+  background-color: #fff;
   box-shadow: var(--calendarShadow);
   border-radius: 8px;
-  z-index: 1000;
+  z-index: 5000;
+}
+
+.mod-block-calendar {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .mod-calendar-header {
@@ -56,7 +62,7 @@
     color: var(--calendarFontColor);
     font-weight: 500;
     .mod-arrow-icon {
-      color: var(--idle-col);
+      color: var(--idleColor);
     }
   }
 }
@@ -65,13 +71,13 @@
   display: flex;
   height: 20px;
   padding: 0 8px;
-  border-bottom: 1px solid var(--hover-col);
+  border-bottom: 1px solid var(--hoverColor);
   .mod-insert-day {
     width: 40px;
     height: 20px;
     font-size: 11px;
     text-align: center;
-    color: var(--idle-col);
+    color: var(--idleColor);
   }
 }
 
@@ -99,110 +105,6 @@
   }
   &.month-long {
     grid-template-columns: auto auto auto;
-  }
-}
-
-.mod-selector {
-  user-select: none;
-  box-sizing: unset;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 40px;
-  height: 40px;
-  font-size: var(--contentFontSize);
-  color: var(--calendarFontColor);
-  border-radius: var(--contentBorderRadius);
-  --selectorBackground: transparent;
-  --selectorBackgroundOpacity: 0.3;
-  --selectorBorderColor: transparent;
-  &:hover,
-  .mod-active {
-    --selectorBackground: var(--main-col);
-  }
-  cursor: pointer;
-  .mod-insert-border {
-    pointer-events: none;
-    position: absolute;
-    top: -1px;
-    bottom: -1px;
-    left: -1px;
-    right: -1px;
-    border-radius: 20px;
-    border: 1px solid var(--selectorBorderColor);
-    z-index: -1;
-  }
-  .mod-insert-background {
-    position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    right: 2px;
-    opacity: var(--selectorBackgroundOpacity);
-    border-radius: var(--contentBorderRadius);
-    background-color: var(--selectorBackground);
-    z-index: -2;
-  }
-  .mod-insert-path {
-    position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 0px;
-    right: 0px;
-    z-index: -3;
-    opacity: 0.3;
-    background-color: var(--main-col);
-    &.path-min-start {
-      left: 20px;
-    }
-    &.path-min-end {
-      right: 2px;
-      border-radius: 0 20px 20px 0;
-    }
-    &.path-max-start {
-      left: 2px;
-      border-radius: 20px 0 0 20px;
-    }
-    &.path-max-end {
-      right: 20px;
-    }
-    &.path-min-single,
-    &.path-max-single {
-      display: none;
-    }
-  }
-
-  &.mod-path-start {
-    color: #fff;
-    --selectorBackground: var(--main-col);
-    --selectorBackgroundOpacity: 1;
-  }
-
-  &.mod-path-min-single,
-  &.mod-path-max-single,
-  &.mod-path-min-start,
-  &.mod-path-max-end {
-    color: #fff;
-    --selectorBackground: var(--main-col);
-    --selectorBackgroundOpacity: 1;
-  }
-  /* &.mod-path-max-end {
-    .mod-insert-background {
-      border-radius: 0 20px 20px 0;
-    }
-  }
-  &.mod-path-min-start {
-    .mod-insert-background {
-      border-radius: 20px 0 0 20px;
-    }
-  } */
-  &.mod-selected {
-    --selectorBorderColor: var(--idle-col);
-  }
-  &.mod-disabled {
-    pointer-events: none;
-    color: rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -243,6 +145,7 @@
   /* padding: 8px 8px 0px 8px; */
   background-color: rgba(0, 0, 0, 0.05);
   .mod-calendar-tab {
+    overflow: hidden;
     display: block;
     color: rgba(0, 0, 0, 0.5);
     border-radius: 0;
@@ -255,18 +158,23 @@
     z-index: 2000;
 
     &.mod-idle-tab {
-      color: #fff;
-      background-color: var(--main-col);
-      transform: translateY(14px);
       &:hover {
-        transform: translateY(0);
+        color: var(--mainColor);
       }
     }
     &.mod-active-tab {
       color: #fff;
-      background-color: var(--main-col);
+      background-color: var(--mainColor);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 2px 2px rgba(0, 0, 0, 0.1);
       z-index: 3000;
+    }
+    &.mod-full-tab {
+      width: 100%;
+    }
+    &.mod-shrink-tab {
+      width: 0%;
+      min-width: 0px;
+      padding: 0;
     }
   }
   .bottom-shadow {
@@ -282,19 +190,21 @@
 .mod-bar-date {
   padding: 12px 16px;
   margin-bottom: 8px;
+  height: 50px;
   color: #fff;
   font-size: 20px;
   font-weight: 200;
   text-transform: capitalize;
-  background-color: var(--main-col);
+  background-color: var(--mainColor);
 }
 
 .mod-calendar-range-placeholder {
+  user-select: none;
   display: flex;
   height: 70px;
   padding: 16px 0 8px 0;
   margin-bottom: 8px;
-  background-color: var(--main-col);
+  background-color: var(--mainColor);
   .mod-static-tab {
     width: 296px;
     padding: 0 16px;
@@ -366,5 +276,122 @@
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* 
+  ------------------------------------------------------------------------- 
+  ----- SELECTOR
+  ------------------------------------------------------------------------- 
+  */
+
+.mod-selector {
+  user-select: none;
+  box-sizing: unset;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 40px;
+  height: 40px;
+  font-size: var(--contentFontSize);
+  color: var(--calendarFontColor);
+  border-radius: var(--contentBorderRadius);
+  --selectorBackground: transparent;
+  --selectorBackgroundOpacity: 0.3;
+  --selectorBorderColor: transparent;
+  &:hover,
+  .mod-active {
+    --selectorBackground: var(--mainColor);
+  }
+  cursor: pointer;
+  .mod-insert-border {
+    pointer-events: none;
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    border-radius: 20px;
+    border: 1px solid var(--selectorBorderColor);
+    z-index: -1;
+  }
+  .mod-insert-background {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+    opacity: var(--selectorBackgroundOpacity);
+    border-radius: var(--contentBorderRadius);
+    background-color: var(--selectorBackground);
+    z-index: -2;
+  }
+  .mod-insert-path {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 0px;
+    right: 0px;
+    z-index: -3;
+    opacity: 0.3;
+    background-color: var(--mainColor);
+    &.path-min-start {
+      left: 20px;
+    }
+    &.path-min-end {
+      right: 2px;
+      border-radius: 0 20px 20px 0;
+    }
+    &.path-max-start {
+      left: 2px;
+      border-radius: 20px 0 0 20px;
+    }
+    &.path-max-end {
+      right: 20px;
+    }
+    &.path-min-single,
+    &.path-max-single {
+      display: none;
+    }
+    &.path-max-single-disabled {
+      left: 2px;
+      right: 2px;
+      border-radius: 20px;
+    }
+  }
+
+  &.mod-path-start {
+    color: #fff;
+    --selectorBackground: var(--mainColor);
+    --selectorBackgroundOpacity: 1;
+  }
+
+  &.mod-active,
+  &.mod-path-min-single,
+  &.mod-path-max-single,
+  &.mod-path-min-start,
+  &.mod-path-max-end {
+    color: #fff;
+    --selectorBackground: var(--mainColor);
+    --selectorBackgroundOpacity: 1;
+  }
+  /* &.mod-path-max-end {
+    .mod-insert-background {
+      border-radius: 0 20px 20px 0;
+    }
+  }
+  &.mod-path-min-start {
+    .mod-insert-background {
+      border-radius: 20px 0 0 20px;
+    }
+  } */
+  &.mod-selected {
+    --selectorBorderColor: var(--idleColor);
+  }
+
+  &.mod-disabled {
+    pointer-events: none;
+    color: rgba(0, 0, 0, 0.3);
   }
 }

@@ -9,12 +9,11 @@ type RangeDate = {
   min: Date | null;
   max: Date | null;
 };
-const CtrlDatePicker: FC<Props> = ({ name }) => {
-  const [date, setDate] = useState<Date | null>(null);
-
-  function handleDate(value: Date | null) {
-    setDate(value);
-  }
+const CtrlDatePickerRange: FC<Props> = ({ name }) => {
+  const [dateRange, setDateRange] = useState<RangeDate>({
+    min: new Date("2028, 0, 15"),
+    max: null,
+  });
 
   function toString(value: RangeDate) {
     let str = "";
@@ -23,17 +22,28 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
     return str;
   }
 
+  function handleDateRange(value: RangeDate) {
+    console.log("CURRENT VALUE " + toString(value));
+    setDateRange(value);
+  }
+
   return (
     <DatePicker
-      name="DATEPICKER TEST"
-      value={date}
-      onChange={handleDate}
+      range="2-calendar"
+      name="DATEPICKER RANGE TEST"
+      value={dateRange}
+      onChange={handleDateRange}
       openTo="day"
-      minDate={new Date(2022, 0, 5)}
+      minDate={new Date(2022, 1, 5)}
       maxDate={new Date(2025, 0, 15)}
       option={{
         weekday: "short",
         headerButton: "2-button",
+        headerRange: {
+          startDate: "data di inizio",
+          endDate: "data di fine",
+          selectDate: "Seleziona Data",
+        },
         monthOption: { button: "long", calendar: "short" },
         actionButton: {
           apply: "Conferma",
@@ -48,4 +58,4 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
     />
   );
 };
-export default CtrlDatePicker;
+export default CtrlDatePickerRange;

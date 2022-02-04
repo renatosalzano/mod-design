@@ -1,14 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100;200;300;400;500&family=Roboto:wght@100;300;400;500;700;900&display=swap");
 
 .mod-theme {
-  --font-col: #000000de;
-  --idle-col: rgba(29, 30, 32, 0.5);
-  --main-col: rgb(72, 140, 228);
-  --success-col: green;
-  --warning-col: yellow;
-  --error-col: rgba(192, 27, 27, 0.925);
-  --hover-col: rgba(136, 149, 163, 0.1);
-  --disabled-col: rgba(48, 48, 48, 0.25);
+  --fontColor: #000000de;
+  --idleColor: rgba(29, 30, 32, 0.5);
+  --mainColor: rgb(72, 140, 228);
+  --successColor: green;
+  --warningColor: yellow;
+  --errorColor: rgba(192, 27, 27, 0.925);
+  --hoverColor: rgba(136, 149, 163, 0.1);
+  --disabledColor: rgba(48, 48, 48, 0.25);
 }
 
 .mod-core {
@@ -21,26 +21,25 @@
   --width: 240px;
   --height: 36px;
   --border-width: 1px;
-  --color: var(--idle-col);
+  --color: var(--idleColor);
   --dropdown-offset: calc(var(--border-width) * -1);
   --borderRadius: 5.5px;
-  z-index: 1000;
   &.focus,
   &:hover {
-    --color: var(--main-col);
+    --color: var(--mainColor);
   }
   &.mod-success {
-    --color: var(--success-col);
+    --color: var(--successColor);
   }
   &.mod-warning {
-    --color: var(--warning-col);
+    --color: var(--warningColor);
   }
   &.mod-error,
   &.error {
-    --color: var(--error-col);
+    --color: var(--errorColor);
   }
   &.disabled {
-    --color: var(--disabled-col);
+    --color: var(--disabledColor);
   }
   &.pointer {
     cursor: pointer;
@@ -72,7 +71,7 @@
   left: var(--dropdown-offset);
   right: var(--dropdown-offset);
   bottom: var(--dropdown-offset);
-  z-index: 1000;
+  z-index: 5000;
 }
 
 .mod-input-flex {

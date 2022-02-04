@@ -14,6 +14,13 @@
   transform: translate3d(0, 0, 0);
   transition: all ease-out 0.2s;
   cursor: pointer;
+  &.mod-disabled {
+    cursor: default;
+    pointer-events: none;
+    color: var(--disabledColor);
+    background-color: transparent;
+    border: 1px solid var(--disabledColor);
+  }
 }
 
 .mat-button-base {
@@ -21,13 +28,13 @@
   padding: 0px 16px;
 }
 .mod-primary {
-  background-color: var(--main-col);
+  background-color: var(--mainColor);
   color: #fff;
   font-weight: 500;
 }
 
 .mod-hover:hover {
-  background-color: var(--hover-col);
+  background-color: var(--hoverColor);
 }
 
 /* 
@@ -40,8 +47,8 @@
   height: 7px;
   width: 7px;
   margin: 15.5px;
-  border-top: 2px solid var(--idle-col);
-  border-left: 2px solid var(--idle-col);
+  border-top: 2px solid var(--idleColor);
+  border-left: 2px solid var(--idleColor);
   transform: rotate(-45deg);
 }
 
