@@ -1,24 +1,25 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { DatePicker } from "../mod-design/core";
+import { useFakeForm } from "./useFakeForm";
 
 interface Props {
   name: string;
 }
 
 type RangeDate = {
-  min: Date | null;
-  max: Date | null;
+  start: Date | null;
+  end: Date | null;
 };
 const CtrlDatePickerRange: FC<Props> = ({ name }) => {
   const [dateRange, setDateRange] = useState<RangeDate>({
-    min: new Date("2028, 0, 15"),
-    max: null,
+    start: new Date(2030, 0, 31),
+    end: new Date(2029, 1, 20),
   });
 
   function toString(value: RangeDate) {
     let str = "";
-    if (value.min) str += ` min: ${value.min.toLocaleDateString()}`;
-    if (value.max) str += ` max: ${value.max.toLocaleDateString()}`;
+    value.start ? (str += ` min: ${value.start.toLocaleDateString()}`) : (str += " null");
+    value.end ? (str += ` max: ${value.end.toLocaleDateString()}`) : (str += " null");
     return str;
   }
 
@@ -34,26 +35,31 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
       value={dateRange}
       onChange={handleDateRange}
       openTo="day"
-      minDate={new Date(2022, 1, 5)}
-      maxDate={new Date(2025, 0, 15)}
+      minDate={new Date(2021, 0, 15)}
+      maxDate={new Date(2023, 9, 15)}
       option={{
-        weekday: "short",
-        headerButton: "2-button",
-        headerRange: {
-          startDate: "data di inizio",
-          endDate: "data di fine",
-          selectDate: "Seleziona Data",
-        },
+        weekday: "narrow",
         monthOption: { button: "long", calendar: "short" },
-        actionButton: {
-          apply: "Conferma",
-          cancel: "Annulla",
-          back: "Indietro",
-        },
+      }}
+      helperText="sono un helper text"
+      dateFormat="D/M/Y"
+      localization={{
+        locale: "it-IT",
+        fristDayWeek: "monday",
+        startDate: "data di inizio",
+        endDate: "data di fine",
+        selectDate: "Seleziona Data",
+        today: "oggi",
+        apply: "Conferma",
+        cancel: "Annulla",
+        fix: "Aggiusta",
+        mustBeLessThan: "deve essere minore di",
+        mustBeGreaterThan: "deve essere maggiore di",
       }}
       inputProps={{
         dateSeparator: "/",
-        rangeSeparator: ">",
+        rangeSeparator: "-",
+        datePlaceholder: { dd: "gg", mm: "mm", yyyy: "aaaa" },
       }}
     />
   );

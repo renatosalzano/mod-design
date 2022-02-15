@@ -1,120 +1,201 @@
-import { isValidDate } from "./testDate";
+import { compareDate, DateX, isValidDate } from "./DateX";
 
 /**
  * Date Range
  **/
 export interface DateRange {
-  min: Date | null;
-  max: Date | null;
+  start: Date | null;
+  end: Date | null;
 }
 
 export class DateRange {
-  public min: Date | null = null;
-  public max: Date | null = null;
-  private dateMin: number[] = [];
-  private dateMax: number[] = [];
-  private minIsGreater = false;
-  constructor(min: Date | null, max: Date | null) {
-    if (min) {
-      if (isValidDate(min)) {
-        this.min = min;
-        this.dateMin = toIndexDate(min);
+  public start: Date | null = null;
+  public end: Date | null = null;
+  private indexStart: number[] = [];
+  private indexEnd: number[] = [];
+  private startIsGreater = false;
+  constructor(start: Date | null, end: Date | null) {
+    if (start) {
+      if (isValidDate(start)) {
+        this.start = start;
+        this.indexStart = toIndexDate(start);
       } else {
-        this.dateMin = [];
-        console.warn("new DateRange( min is invalid Date )");
+        this.indexStart = [];
+        console.warn("new DateRange( start is invalid Date )");
       }
     }
-    if (max) {
-      if (isValidDate(max)) {
-        this.max = max;
-        this.dateMax = toIndexDate(max);
+    if (end) {
+      if (isValidDate(end)) {
+        this.end = end;
+        this.indexEnd = toIndexDate(end);
       } else {
-        this.dateMax = [];
-        console.warn("new DateRange( max is invalid Date )");
-      }
-    }
-    if (this.min && this.max) {
-      const test = compareDate(this.min, this.max);
-      if (test === "greater") {
-        console.warn("new DateRange( min is GREATER than max )");
-        this.minIsGreater = true;
-        this.min = new Date(this.max);
+        this.indexEnd = [];
+        console.warn("new DateRange( end is invalid Date )");
       }
     }
   }
-  getIndexDateMin() {
-    return this.dateMin;
+  getRange() {
+    return { start: this.start, end: this.end };
   }
-  getIndexDateMax() {
-    return this.dateMax;
+  getIndexStart() {
+    return this.indexStart;
   }
-  setMinDate(date: Date) {
+  getIndexEnd() {
+    return this.indexEnd;
+  }
+  setStart(date: Date) {
     if (isValidDate(date)) {
-      this.min = date;
-      this.dateMin = toIndexDate(date);
+      this.start = date;
+      this.indexStart = toIndexDate(date);
     }
   }
-  setMaxDate(date: Date) {
+  setEnd(date: Date) {
     if (isValidDate(date)) {
-      this.max = date;
-      this.dateMax = toIndexDate(date);
+      this.end = date;
+      this.indexEnd = toIndexDate(date);
     }
+  }
+  resetStart() {
+    this.start = null;
+    this.indexStart = [];
+  }
+  resetMaxDate() {
+    this.end = null;
+    this.indexEnd = [];
   }
   compareMinDate(date: Date) {
-    if (this.min) {
-      return compareDate(this.min, date);
+    if (this.start) {
+      return compareDate(this.start, date);
     } else {
       return null;
     }
   }
   compareMaxDate(date: Date) {
-    if (this.max) {
-      return compareDate(this.max, date);
+    if (this.end) {
+      return compareDate(this.end, date);
     } else {
       return null;
     }
   }
   isMinGreater() {
-    return this.minIsGreater;
+    return this.startIsGreater;
   }
+
   isValidRange() {
-    return this.min !== null && this.max !== null;
+    return this.start !== null && this.end !== null;
   }
 }
 
 function toIndexDate(date: Date) {
   return [date.getFullYear(), date.getMonth(), date.getDate()];
 }
-function toTime(date: Date) {
-  const clone = new Date(date);
-  const y = clone.getFullYear();
-  const m = clone.getMonth();
-  const d = clone.getDate();
-  return new Date(y, m, d).getTime();
-}
 
-export function compareDate(_x: Date, _y: Date) {
-  const x = toTime(_x);
-  const y = toTime(_y);
-  switch (true) {
-    case x === y:
-      return "equal";
-    case x > y:
-      return "greater";
-    case x < y:
-      return "less";
-    default:
-      return "error";
+export function toDateRange(range: any) {
+  if (isValidRange(range)) {
+    return new DateRange(range.start, range.end);
+  } else {
+    return new DateRange(null, null);
   }
 }
 
 export function isValidRange(range: any) {
-  let hasMin = "min" in range;
-  let hasMax = "max" in range;
+  if (range) {
+    let hasStart = "start" in range;
+    let hasEnd = "end" in range;
 
-  if (!hasMin || !hasMax) return false;
-  let minIsValid = range.min instanceof Date || range.min === null;
-  let maxIsValid = range.max instanceof Date || range.max === null;
-  if (!minIsValid || !maxIsValid) return false;
-  return true;
+    if (!hasStart || !hasEnd) return false;
+    let startIsValid = range.start instanceof Date || range.start === null;
+    let endIsValid = range.end instanceof Date || range.end === null;
+    if (!startIsValid || !endIsValid) return false;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+export function checkIsRange(range: any) {
+  if (range) {
+    let hasMin = "start" in range;
+    let hasMax = "end" in range;
+
+    if (!hasMin || !hasMax) return "not range";
+    let minIsValid = range.start instanceof Date || range.start === null;
+    let maxIsValid = range.end instanceof Date || range.end === null;
+    if (!minIsValid || !maxIsValid) return "not range";
+    return "is range";
+  } else {
+    return "not range";
+  }
+}
+
+export function toRange(value: any): { start: Date | null; end: Date | null } {
+  return { start: value.start, end: value.end };
+}
+
+export function checkRange(
+  range: { start: Date | null; end: Date | null },
+  minDate: Date | null = null,
+  maxDate: Date | null = null,
+) {
+  let error = "";
+  let invalidRange = false;
+  let startLessMinDate = false;
+  let startGreaterMaxDate = false;
+  let endLessMinDate = false;
+  let endGreaterMaxDate = false;
+  let errorMessage: string[] = [];
+  const minRange = range.start ? new DateX(range.start) : null;
+  const maxRange = range.end ? new DateX(range.end) : null;
+  const minDateString = minDate ? minDate.toLocaleDateString() : "";
+  const maxDateString = maxDate ? maxDate.toLocaleDateString() : "";
+  if (minRange && maxRange) {
+    switch (minRange.compare(maxRange)) {
+      case "greater":
+      case "equal":
+        errorMessage.push(`Start Date must be less than End Date`);
+        invalidRange = true;
+    }
+  }
+  if (minRange) {
+    console.log(minRange.compareInRange(minDate, maxDate));
+    switch (minRange.compareInRange(minDate, maxDate)) {
+      case "less min":
+        errorMessage.push(`Start Date must be greater than ${minDateString}`);
+        startLessMinDate = true;
+        break;
+      case "greater max":
+        startGreaterMaxDate = true;
+        errorMessage.push(`Start Date must be less than ${maxDateString}`);
+        break;
+    }
+  }
+  if (maxRange) {
+    switch (maxRange.compareInRange(minDate, maxDate)) {
+      case "less min":
+        endLessMinDate = true;
+        errorMessage.push(`End Date must be greater than ${minDateString}`);
+        break;
+      case "greater max":
+        endGreaterMaxDate = true;
+        errorMessage.push(`End Date must be less than ${maxDateString}`);
+        break;
+    }
+  }
+  if (errorMessage.length > 0) {
+    errorMessage.forEach((message, index) => {
+      if (index < errorMessage.length) {
+        error += `${message}\n`;
+      } else {
+        error += message;
+      }
+    });
+  }
+  return {
+    error,
+    invalidRange,
+    startGreaterMaxDate,
+    startLessMinDate,
+    endLessMinDate,
+    endGreaterMaxDate,
+  };
 }

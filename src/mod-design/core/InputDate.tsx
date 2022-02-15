@@ -1,40 +1,31 @@
 import {
   ChangeEvent,
-  Dispatch,
+  createContext,
   FC,
-  Fragment,
   KeyboardEvent,
-  SetStateAction,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { DateRange, isValidRange } from "../utils/DateRange";
-import { isValidDate } from "../utils/testDate";
+import { DateRange, isValidRange, toDateRange } from "../utils/DateRange";
+import { DateX, indexToDateX, preventDayOverflow, toDate, toDateX } from "../utils/DateX";
+import { CoreProps, ModuleCore, useModuleCore } from "./ModuleCore";
 import "./SCSS/mod-core-inputdate.scss";
 
 type DateFormat = "D/M/Y" | "M/D/Y" | "Y/M/D";
 type DateSeparator = "/" | "." | "-" | " ";
 type DatePlaceholder = { dd: string; mm: string; yyyy: string };
-type ScrollFocus = (index: 1 | -1, currentIndex: number) => void;
 type OnChangeDate = (value: Date | null) => void;
 type OnChangeDateRange = (value: DateRange) => void;
 type OnChange = OnChangeDate | OnChangeDateRange;
-interface Setter {
-  focus: () => void;
-  unfocus: () => void;
-  getIndex: number;
-}
-interface ActiveInput {
-  curr: number;
-}
-interface SetInput {
-  [key: number]: Setter;
+interface Option {
+  rangeErrorMessage?: { lessMinDate: string; greaterMaxDate: string };
 }
 
-interface Props {
-  name: string;
+interface Props extends CoreProps {
+  name?: string;
   range?: boolean;
   value: DateRange | (Date | null);
   minDate?: Date | null;
@@ -43,10 +34,11 @@ interface Props {
   dateSeparator?: DateSeparator;
   datePlaceholder?: DatePlaceholder;
   rangeSeparator?: string;
-  disabled?: boolean;
   readOnly?: boolean;
+  option?: Option;
   onSpaceDown?: () => void;
   onChange: OnChange;
+  skipCheck?: boolean;
 }
 
 type IE = HTMLInputElement;
@@ -56,96 +48,224 @@ const InputDate: FC<Props> = ({
   name,
   range = undefined,
   value,
-  dateFormat = "D/M/Y",
+  dateFormat = "Y/M/D",
   dateSeparator = "/",
   datePlaceholder = { dd: "dd", mm: "mm", yyyy: "yyyy" },
   rangeSeparator = "-",
   minDate = null,
   maxDate = null,
+  focused,
   disabled,
   readOnly,
+  error,
   onSpaceDown,
   onChange,
+  skipCheck,
+  border = false,
 }) => {
-  function isDate(value: any) {
-    if (value instanceof Date && isValidDate(value)) return value;
-    else return null;
-  }
-  function isDateRange(value: any) {
-    if (value instanceof DateRange && isValidRange(value)) {
-      return new DateRange(value.min, value.max);
-    } else return new DateRange(null, null);
-  }
-  /* ----- INPUT SETTER() ------------------------------------------ */
+  const { isFocus, isDisabled, isError } = useModuleCore({
+    focused: focused,
+    disabled: disabled,
+    error: error,
+  });
 
-  const maxLenght = useRef(range ? 5 : 2).current;
-  const activeInput = useRef<ActiveInput>({ curr: -1 }).current;
-  const setInput = useRef<SetInput>({}).current;
-  const scrollIndex = useRef({ curr: 0 }).current;
-  const scrollFocus = useCallback(
-    (scroll: 1 | -1, currentIndex: number) => {
-      let index = currentIndex + scroll;
-      if (index < 0) index = 0;
-      if (index > maxLenght) index = maxLenght;
-      scrollIndex.curr = index;
-      setInput[currentIndex].unfocus();
-      setInput[index].focus();
-    },
-    [maxLenght, scrollIndex, setInput],
-  );
-  const handleDateRangeChange = useCallback(
-    (value: DateRange) => {
-      onChange(value as any);
+  /* FARE IL CHECK DEI PROPS */
+
+  const handleChange = useCallback(
+    (value: any) => {
+      onChange(value);
     },
     [onChange],
   );
-  const handleDateChange = useCallback(
-    (value: Date | null) => {
-      onChange(value as any);
-    },
-    [onChange],
-  );
+
   return (
-    <Fragment>
-      {range ? (
-        <ModInputDateRange
-          dateRange={isDateRange(value)}
-          dateFormat={dateFormat}
-          dateSeparator={dateSeparator}
-          datePlaceholder={datePlaceholder}
-          rangeSeparator={rangeSeparator}
-          defaultMinDate={minDate}
-          defaultMaxDate={maxDate}
-          activeInput={activeInput}
-          setInput={setInput}
-          scrollFocus={scrollFocus}
-          disabled={disabled}
-          readonly={readOnly}
-          onSpaceDown={onSpaceDown}
-          onChange={handleDateRangeChange}
-        />
-      ) : (
-        <ModInputDate
-          date={isDate(value)}
-          minDate={minDate}
-          maxDate={maxDate}
-          dateFormat={dateFormat}
-          dateSeparator={dateSeparator}
-          datePlaceholder={datePlaceholder}
-          activeInput={activeInput}
-          setInput={setInput}
-          scrollFocus={scrollFocus}
-          disabled={disabled}
-          readonly={readOnly}
-          onSpaceDown={onSpaceDown}
-          onChange={handleDateChange}
-        />
-      )}
-    </Fragment>
+    <ModuleCore
+      cssCustom="mod-inputdate-core"
+      focused={isFocus}
+      error={isError}
+      disabled={isDisabled}
+      border={border}>
+      <InputDateCore
+        value={value}
+        range={range}
+        dateFormat={dateFormat}
+        dateSeparator={dateSeparator}
+        datePlaceholder={datePlaceholder}
+        error={isError}
+        onSpaceDown={onSpaceDown}>
+        {range ? (
+          <ModInputDateRange
+            value={value}
+            rangeSeparator={rangeSeparator}
+            defaultMinDate={minDate}
+            defaultMaxDate={maxDate}
+            disabled={disabled}
+            readonly={readOnly}
+            onSpaceDown={onSpaceDown}
+            onChange={handleChange}
+          />
+        ) : (
+          <ModInputDate
+            date={isDate(value)}
+            minDate={minDate}
+            maxDate={maxDate}
+            disabled={disabled}
+            readonly={readOnly}
+            onSpaceDown={onSpaceDown}
+            onChange={handleChange}
+          />
+        )}
+      </InputDateCore>
+    </ModuleCore>
   );
 };
 
 export default InputDate;
+type InputStatus = "null" | "filled" | "unfilled";
+interface RangeStatus {
+  start: InputStatus;
+  end: InputStatus;
+}
+interface InputSetter {
+  active(): void;
+  idle(): void;
+  getIndex: number;
+}
+/* 
+  ------------------------------------------------------------------------- 
+  ----- <INPUT CORE />
+  ------------------------------------------------------------------------- 
+*/
+interface InputData {
+  range?: boolean;
+  value: any;
+  lenght: number;
+  active: number;
+  scrollIndex: number;
+  rangeStatus: RangeStatus;
+  rangeError: boolean;
+  update(value: any): void;
+  scrollActive(scroll: 1 | -1, currIndex: number): void;
+  focus(index?: number): void;
+  subscribe(index: number, setter: InputSetter): void;
+  unsubscribe(index: number): void;
+  handleBlur(date: Date): void;
+  setValue(value: any): void;
+  setRangeStatus(range: "start" | "end", status: InputStatus): void;
+  set: { [key: number]: InputSetter };
+}
+interface InputDateCoreProps {
+  value: any;
+  range?: boolean;
+  error: boolean;
+  dateFormat: DateFormat;
+  dateSeparator: DateSeparator;
+  datePlaceholder: DatePlaceholder;
+  onSpaceDown?: () => void;
+}
+
+interface InputDateStore {
+  inputData: InputData;
+  dateFormat: DateFormat;
+  dateSeparator: DateSeparator;
+  datePlaceholder: DatePlaceholder;
+  error: boolean;
+  focus: boolean;
+  onSpaceDown?: () => void;
+}
+const InputDateContext = createContext<InputDateStore>({} as InputDateStore);
+const useInputDateCore = () => useContext(InputDateContext);
+const InputDateCore: FC<InputDateCoreProps> = ({
+  range,
+  value,
+  error,
+  dateFormat,
+  datePlaceholder,
+  dateSeparator,
+  onSpaceDown,
+  children,
+}) => {
+  /* 
+  ------------------------------------------------------------------------- 
+  ----- INPUT DATA()
+  ------------------------------------------------------------------------- 
+  */
+  const [focus, setFocus] = useState(false);
+  const inputData = useRef<InputData>({
+    range,
+    value,
+    lenght: range ? 5 : 2,
+    active: -1,
+    scrollIndex: 0,
+    rangeStatus: { start: "null", end: "null" },
+    rangeError: false,
+    update(value) {
+      if (this.range) {
+        /* ----- RANGE */
+        const { start, end } = value;
+        if (start) this.rangeStatus.start = "filled";
+        if (end) this.rangeStatus.end = "filled";
+      } else {
+        /* ----- NOT RANGE */
+      }
+    },
+    scrollActive(scroll: 1 | -1, currIndex: number) {
+      let index = currIndex + scroll;
+      if (index < 0) index = 0;
+      if (index > this.lenght) index = this.lenght;
+      this.scrollIndex = index;
+      this.set[currIndex].idle();
+      this.set[index].active();
+    },
+    focus(index) {
+      if (index) this.active = index;
+      setFocus(true);
+    },
+    handleBlur() {
+      switch (this.rangeStatus.start) {
+        case "filled":
+          break;
+        case "unfilled":
+          break;
+        case "null":
+          break;
+      }
+    },
+    setValue(value) {
+      this.value = value;
+    },
+    setRangeStatus(range, status) {
+      this.rangeStatus[range] = status;
+    },
+    subscribe(index, setter) {
+      this.set[index] = setter;
+    },
+    unsubscribe(index) {
+      delete this.set[index];
+    },
+    set: {},
+  }).current;
+
+  useEffect(() => {
+    inputData.update(value);
+  }, [inputData, value]);
+
+  return (
+    <InputDateContext.Provider
+      value={{
+        inputData,
+        focus,
+        error,
+        dateFormat,
+        dateSeparator,
+        datePlaceholder,
+        onSpaceDown,
+      }}>
+      {children}
+      {focus && <div className="mod-trigger" onClick={() => setFocus(false)} />}
+    </InputDateContext.Provider>
+  );
+};
 
 /* 
   ------------------------------------------------------------------------- 
@@ -154,84 +274,96 @@ export default InputDate;
 */
 
 interface InputDateRangeProps {
-  dateRange: DateRange;
+  value: any;
   defaultMinDate: Date | null;
   defaultMaxDate: Date | null;
-  dateFormat?: DateFormat;
-  dateSeparator?: DateSeparator;
-  datePlaceholder?: DatePlaceholder;
   rangeSeparator?: string;
-  activeInput: ActiveInput;
-  setInput: SetInput;
-  scrollFocus: ScrollFocus;
   disabled?: boolean;
   readonly?: boolean;
   onSpaceDown?: () => void;
-  onChange: (value: DateRange) => void;
+  onChange: (value: any) => void;
 }
 
 const ModInputDateRange: FC<InputDateRangeProps> = ({
-  dateRange,
+  value,
   defaultMinDate,
   defaultMaxDate,
   rangeSeparator = "-",
-  dateFormat = "D/M/Y",
-  dateSeparator,
-  datePlaceholder,
-  activeInput,
-  setInput,
-  scrollFocus,
   disabled,
   readonly,
   onSpaceDown,
   onChange,
 }) => {
-  const [minDate, setMinDate] = useState(dateRange.min);
-  const [maxDate, setMaxDate] = useState(dateRange.max);
+  const { error } = useInputDateCore();
+  const [{ start, end }, setRange] = useState(value);
+
+  /* function init(date: Date | null, defaultDate: Date | null) {
+    if (date) return date;
+    else return defaultDate;
+  }
+
+  const [minDate, setMinDate] = useState(() => init(start, defaultMinDate));
+  const [maxDate, setMaxDate] = useState(() => init(end, defaultMaxDate)); */
+
+  const rangeDate = useRef({
+    value: value,
+    update(value: any) {
+      this.value = value;
+      setRange(this.value);
+    },
+    setStart(value: Date | null) {
+      this.value.start = value;
+      this.update(this.value);
+      this.handleChange();
+    },
+    setEnd(value: Date | null) {
+      this.value.end = value;
+      this.update(this.value);
+      this.handleChange();
+    },
+    handleChange() {
+      console.log("UPDATE", this.value);
+      onChange(this.value);
+    },
+  }).current;
+
+  useEffect(() => {
+    if (!error) {
+      rangeDate.update(value);
+    }
+  }, [error, rangeDate, value]);
+
   const handleMinChange = useCallback(
     (value: Date | null) => {
-      setMinDate(value);
-      onChange(new DateRange(value, maxDate));
+      rangeDate.setStart(value);
     },
-    [maxDate, onChange],
+    [rangeDate],
   );
   const handleMaxChange = useCallback(
     (value: Date | null) => {
-      setMaxDate(value);
-      onChange(new DateRange(minDate, value));
+      rangeDate.setEnd(value);
     },
-    [minDate, onChange],
+    [rangeDate],
   );
+
   return (
     <div className="mod-inputdate-range">
       <ModInputDate
-        date={dateRange.min}
+        rangeType="start"
+        date={start}
         minDate={defaultMinDate}
-        maxDate={maxDate}
-        dateFormat={dateFormat}
-        dateSeparator={dateSeparator}
-        datePlaceholder={datePlaceholder}
-        activeInput={activeInput}
-        setInput={setInput}
-        scrollFocus={scrollFocus}
+        maxDate={end}
         disabled={disabled}
         readonly={readonly}
         onChange={handleMinChange}
         onSpaceDown={onSpaceDown}
       />
-      {rangeSeparator && (
-        <div className="mod-inputdate-separator">{rangeSeparator}</div>
-      )}
+      {rangeSeparator && <div className="mod-inputdate-separator">{rangeSeparator}</div>}
       <ModInputDate
-        date={dateRange.max}
-        minDate={minDate}
+        rangeType="end"
+        date={end}
+        minDate={start}
         maxDate={defaultMaxDate}
-        dateFormat={dateFormat}
-        dateSeparator={dateSeparator}
-        datePlaceholder={datePlaceholder}
-        activeInput={activeInput}
-        setInput={setInput}
-        scrollFocus={scrollFocus}
         disabled={disabled}
         readonly={readonly}
         onSpaceDown={onSpaceDown}
@@ -247,243 +379,217 @@ const ModInputDateRange: FC<InputDateRangeProps> = ({
   ----- <INPUT DATE/>
   ------------------------------------------------------------------------- 
 */
+
 interface InputDateProps {
+  rangeType?: "start" | "end";
   date: Date | null;
   minDate: Date | null;
   maxDate: Date | null;
-  dateFormat?: DateFormat;
-  dateSeparator?: DateSeparator;
-  datePlaceholder?: DatePlaceholder;
-  setInput: SetInput;
-  activeInput: ActiveInput;
   indexOffset?: boolean;
-  scrollFocus: ScrollFocus;
   disabled?: boolean;
   readonly?: boolean;
   onSpaceDown?: () => void;
   onChange: (value: Date | null) => void;
 }
+interface StateData {
+  value: DateX | null;
+  min: Date | null;
+  max: Date | null;
+  dayInMonth: number;
+  dateIndex: { year: number; month: number; day: number };
+  status: "null" | "filled" | "unfilled";
+  update(value: DateX | null, minDate: Date | null, maxDate: Date | null): void;
+  updateFilled(date: DateX): void;
+  renderDate(y?: string | null, m?: string | null, d?: string | null): void;
+  checkNaN(): "null" | "filled" | "unfilled";
+  checkDate(checkYear?: true): void;
+  checkDateInRange(date: DateX): DateX;
+  setYear(year: number): void;
+  setMonth(month: number): void;
+  setDay(day: number): void;
+  cancel(type: "Y" | "M" | "D"): void;
+  getDayInMonth(): { max: number; maxFristDigit: number };
+}
 const ModInputDate: FC<InputDateProps> = ({
+  rangeType = "start",
   date,
   minDate,
   maxDate,
-  dateFormat = "D/M/Y",
-  dateSeparator = "/",
-  datePlaceholder = { dd: "dd", mm: "mm", yyyy: "yyyy" },
   indexOffset,
-  activeInput,
-  setInput,
-  scrollFocus,
   disabled,
   readonly,
   onSpaceDown,
   onChange,
 }) => {
-  const [focus, setFocus] = useState(false);
-  const { dd, mm, yyyy } = datePlaceholder;
-  const inputType = useRef<InputType[]>(
-    dateFormat.split("/") as InputType[],
-  ).current;
-  const [year, setYear] = useState(yyyy);
-  const [month, setMonth] = useState(mm);
-  const [day, setDay] = useState(dd);
+  const {
+    inputData,
+    focus,
+    dateFormat,
+    dateSeparator,
+    datePlaceholder: { dd, mm, yyyy },
+  } = useInputDateCore();
+  const inputType = useRef<InputType[]>(dateFormat.split("/") as InputType[]).current;
+  const [Y, renderY] = useState(yyyy);
+  const [M, renderM] = useState(mm);
+  const [D, renderD] = useState(dd);
 
-  const [rangeYear, setRangeYear] = useState(() => {
-    let min = 0;
-    let max = 9999;
-    if (minDate) min = dateToNumber(minDate).year;
-    if (maxDate) max = dateToNumber(maxDate).year;
-    return { min, max };
-  });
-
-  const [rangeMonth, setRangeMonth] = useState({ min: 1, max: 11 });
-  const [rangeDay, setRangeDay] = useState({ min: 1, max: 31 });
-
-  const checkDate = useRef((year: string, month: string, day: string) => {
-    const check = validDate(year, month, day);
-    switch (check) {
-      case "invalid":
-        if (date) {
-          const { Y, M, D } = dateToString(date);
-          setYear(Y);
-          setMonth(M);
-          setDay(D);
-        }
-        break;
-      case null:
-        if (date) onChange(null);
-        break;
-      default:
-        break;
-    }
-    console.log(year, month, day);
-  });
-
-  const checkIsValidDate = useCallback(
-    (digit: number, type: InputType) => {
-      let currDate: Date | null = null;
+  const stateData = useRef<StateData>({
+    value: null,
+    min: minDate,
+    max: maxDate,
+    dateIndex: { year: NaN, month: NaN, day: NaN },
+    dayInMonth: 31,
+    status: "null",
+    update(value, minDate, maxDate) {
+      if (value) {
+        this.value = new DateX(value);
+        this.dateIndex = this.value.getIndexDate();
+        this.updateFilled(this.value);
+      } else {
+        this.status = "null";
+        this.value = null;
+        this.dateIndex = { year: NaN, month: NaN, day: NaN };
+        this.renderDate(yyyy, mm, dd);
+      }
+      if (minDate) this.min = minDate;
+      if (maxDate) this.max = maxDate;
+    },
+    updateFilled(date: DateX) {
+      this.status = "filled";
+      this.value = date;
+      this.dateIndex = date.getIndexDate();
+      const { year, month, day } = date.toStringDigit();
+      this.renderDate(year, month, day);
+      inputData.setRangeStatus(rangeType, "filled");
+    },
+    renderDate(y, m, d) {
+      if (y) renderY(y);
+      if (m) renderM(m);
+      if (d) renderD(d);
+    },
+    checkNaN() {
+      const { year, month, day } = this.dateIndex;
+      switch (true) {
+        case isNaN(year) && isNaN(month) && isNaN(day):
+          inputData.setRangeStatus(rangeType, "null");
+          return "null";
+        case isNaN(year) || isNaN(month) || isNaN(day):
+          inputData.setRangeStatus(rangeType, "unfilled");
+          return "unfilled";
+        default:
+          inputData.setRangeStatus(rangeType, "filled");
+          return "filled";
+      }
+    },
+    checkDateInRange(date) {
+      switch (date.compareInRange(this.min, this.max)) {
+        case "less min":
+          return new DateX(this.min as Date);
+        case "greater max":
+          return new DateX(this.max as Date);
+        default:
+          return date;
+      }
+    },
+    checkDate() {
+      if (this.checkNaN() === "filled") {
+        const { year, month, day } = this.dateIndex;
+        const update = preventDayOverflow(year, month, day);
+        this.updateFilled(update);
+        onChange(new Date(update));
+      }
+    },
+    getDayInMonth() {
+      const maxFristDigit = parseInt(`${this.dayInMonth}`[0]);
+      return { max: this.dayInMonth, maxFristDigit };
+    },
+    setYear(year) {
+      this.dateIndex.year = year;
+      if (this.checkNaN() === "unfilled") {
+        const yearStr = `${year}`.padStart(4, "0");
+        this.renderDate(yearStr, null, null);
+      } else {
+        this.checkDate();
+      }
+    },
+    setMonth(month) {
+      this.dateIndex.month = month;
+      if (this.checkNaN() === "unfilled") {
+        const monthStr = `${month + 1}`.padStart(2, "0");
+        this.renderDate(null, monthStr, null);
+      } else {
+        this.checkDate();
+      }
+    },
+    setDay(day) {
+      this.dateIndex.day = day;
+      if (this.checkNaN() === "unfilled") {
+        const dayStr = `${day}`.padStart(2, "0");
+        this.renderDate(null, null, dayStr);
+      } else {
+        this.checkDate();
+      }
+    },
+    cancel(type: "Y" | "M" | "D") {
       switch (type) {
         case "Y":
-          currDate = new Date(digit);
+          this.dateIndex.year = NaN;
+          renderY(yyyy);
           break;
         case "M":
+          this.dateIndex.month = NaN;
+          renderM(mm);
           break;
         case "D":
-          console.log(year, month, digit);
+          this.dateIndex.day = NaN;
+          renderD(dd);
           break;
       }
+      switch (this.checkNaN()) {
+        case "null":
+          this.status = "null";
+          onChange(null);
+          break;
+        case "unfilled":
+          this.status = "unfilled";
+      }
     },
-    [month, year],
-  );
+  }).current;
 
-  const handleYear = useCallback((year: number, index: number) => {}, []);
-  const handleMonth = useCallback((month: number, index: number) => {}, []);
-  const handleDay = useCallback(
-    (day: number, index: number) => {
-      console.log(day);
-      const { min, max } = rangeDay;
-      switch (true) {
-        case day >= 4 && day <= 9:
-          setDay(`${day}`);
-          scrollFocus(1, index);
-          break;
-        case day >= 10 && day < max:
-          setDay(`${day}`);
-          scrollFocus(1, index);
-          break;
-        case day >= max:
-          setDay(`${max}`);
-          scrollFocus(1, index);
-          break;
-        default:
-          setDay(`${day}`);
-          break;
-      }
-      checkIsValidDate(day, "D");
-    },
-    [checkIsValidDate, rangeDay, scrollFocus],
-  );
-  const handleKeydown = useCallback(
-    (
-      event: KeyboardEvent<IE>,
-      value: number,
-      type: InputType,
-      index: number,
-    ) => {
-      switch (event.code) {
-        case "Space":
-          event.preventDefault();
-          console.log("space");
-          if (onSpaceDown) onSpaceDown();
-          break;
-        case "Backspace":
-        case "Delete":
-          event.preventDefault();
-          switch (type) {
-            case "Y":
-              setYear(yyyy);
-              break;
-            case "M":
-              setMonth(mm);
-              break;
-            case "D":
-              setDay(dd);
-              break;
-          }
-          break;
-        case "ArrowLeft":
-          event.preventDefault();
-          checkIsValidDate(value, type);
-          scrollFocus(-1, index);
-          break;
-        case "ArrowRight":
-          event.preventDefault();
-          checkIsValidDate(value, type);
-          scrollFocus(1, index);
-          break;
-        case "ArrowUp":
-          event.preventDefault();
-          break;
-        case "ArrowDown":
-          event.preventDefault();
-          break;
-      }
-    },
-    [checkIsValidDate, dd, mm, onSpaceDown, scrollFocus, yyyy],
-  );
-  const handleBlur = useCallback((digit: number, _type: InputType) => {}, []);
-
-  const fristRender = useRef(true);
   useEffect(() => {
-    if (fristRender.current) {
-      fristRender.current = false;
-    } else {
-      if (!focus) {
-        checkDate.current(year, month, day);
-      }
-    }
-  }, [day, focus, month, year]);
+    stateData.update(toDateX(date), minDate, maxDate);
+  }, [date, maxDate, minDate, stateData]);
 
-  const updateValue = useCallback(() => {
-    console.log(date);
-    if (date) {
-      const { Y, M, D } = dateToString(date);
-      setYear(Y);
-      setMonth(M);
-      setDay(D);
-    } else {
-      setYear(yyyy);
-      setMonth(mm);
-      setDay(dd);
-    }
-  }, [dd, mm, date, yyyy]);
-  useEffect(() => {
-    updateValue();
-  }, [updateValue]);
   const input = {
     Y: (
       <Input
-        id="Y"
-        value={year}
+        type="Y"
+        value={Y}
+        pad={4}
         index={getIndex("Y")}
-        onChange={handleYear}
-        setInput={setInput}
-        activeInput={activeInput}
+        stateData={stateData}
         disabled={disabled}
         readonly={readonly}
-        setFocus={setFocus}
-        onKeydown={handleKeydown}
-        onBlur={handleBlur}
       />
     ),
     M: (
       <Input
-        id="M"
-        value={month}
+        type="M"
+        value={M}
         index={getIndex("M")}
-        onChange={handleMonth}
-        setInput={setInput}
-        activeInput={activeInput}
+        stateData={stateData}
         disabled={disabled}
         readonly={readonly}
-        setFocus={setFocus}
-        onKeydown={handleKeydown}
-        onBlur={handleBlur}
       />
     ),
     D: (
       <Input
-        id="D"
-        value={day}
+        type="D"
+        value={D}
         index={getIndex("D")}
-        onChange={handleDay}
-        setInput={setInput}
-        activeInput={activeInput}
+        stateData={stateData}
         disabled={disabled}
         readonly={readonly}
-        setFocus={setFocus}
-        onKeydown={handleKeydown}
-        onBlur={handleBlur}
       />
     ),
   };
@@ -498,7 +604,7 @@ const ModInputDate: FC<InputDateProps> = ({
     let classname = "mod-inputdate";
     if (focus) classname += " mod-focus";
     if (readonly) classname += "mod-readonly";
-    if (disabled) classname += "mod-disabled";
+    if (disabled) classname += " mod-disabled";
     return classname;
   }
   return (
@@ -525,152 +631,313 @@ type HandleKeydown = (
 ) => void;
 
 interface InputProps {
-  id: InputType;
+  type: InputType;
   value: string;
   index: number;
   pad?: number;
-  activeInput: ActiveInput;
-  setInput: SetInput;
   disabled?: boolean;
   readonly?: boolean;
-  setFocus: Dispatch<SetStateAction<boolean>>;
-  onChange: (value: number, index: number) => void;
-  onKeydown: HandleKeydown;
-  onBlur: (digit: number, type: InputType) => void;
+  stateData: StateData;
 }
-const Input: FC<InputProps> = ({
-  id,
-  value,
-  index,
-  pad = 2,
-  activeInput,
-  setInput,
-  disabled,
-  readonly,
-  setFocus,
-  onChange,
-  onKeydown,
-  onBlur,
-}) => {
+const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly, stateData }) => {
+  const { inputData, onSpaceDown } = useInputDateCore();
+  const [fristDigit, setFristDigit] = useState("");
   const ref = useRef<IE>(null);
-  const [active, setActive] = useState(false);
-  const handleChange = (event: ChangeEvent<IE>) => {
-    if (disabled || readonly) return;
-    event.target.focus();
-    const digit = event.target.value;
-    if (digit === "" || /^\d+$/.test(digit)) {
-      onChange(parseInt(digit), index);
-    }
-  };
-  const select = () => {
-    if (disabled || readonly) return;
-    setFocus(true);
-    setActive(true);
-    ref.current!.select();
-    activeInput.curr = index;
-  };
 
-  const unselect = () => {
+  const [active, setActive] = useState(false);
+
+  const select = useRef(() => {
     if (disabled || readonly) return;
-    setFocus(false);
+    inputData.focus(index);
+    setActive(true);
+    ref.current!.focus();
+  }).current;
+
+  const unselect = useRef(() => {
+    if (disabled || readonly) return;
     setActive(false);
     ref.current!.blur();
-    activeInput.curr = -1;
-  };
-  const handleKeydown = (event: KeyboardEvent<IE>) => {
-    if (disabled || readonly) return;
-    onKeydown(event, parseInt(value), id, index);
-  };
-  const handleBlur = () => {
-    if (disabled || readonly) return;
-    unselect();
-    onBlur(parseInt(value), id);
-  };
+  }).current;
 
-  const subscribe = useRef(() => {
-    setInput[index] = {
-      focus: () => select(),
-      unfocus: () => setFocus(false),
-      getIndex: index,
-    };
-  });
-  const unsubscribe = useCallback(() => {
-    delete setInput[index];
-  }, [index, setInput]);
   useEffect(() => {
-    subscribe.current();
+    inputData.subscribe(index, {
+      active() {
+        select();
+      },
+      idle() {
+        unselect();
+      },
+      getIndex: index,
+    });
     return () => {
-      unsubscribe();
+      inputData.unsubscribe(index);
     };
-  }, [unsubscribe]);
-  const renderValue = (value: string) => {
+  }, [index, inputData, select, unselect]);
+  interface Handle {
+    fristDigit: string;
+    scroll: boolean;
+    value: string;
+    yearDigit: number[];
+    update(digit: number): void;
+    notDigit(value: string): boolean;
+    change(event: ChangeEvent<IE>): any;
+    year(digit: number): void;
+    month(digit: number): void;
+    day(digit: number): void;
+    render(digit: number): void;
+    scrollInput(prev?: boolean): void;
+    checkFristDigit(): void;
+    cancel(): void;
+  }
+
+  const handle = useRef<Handle>({
+    fristDigit: "",
+    scroll: false,
+    value: "",
+    yearDigit: [],
+    update(digit) {
+      switch (type) {
+        case "Y":
+          stateData.setYear(digit);
+          break;
+        case "M":
+          stateData.setMonth(digit);
+          break;
+        case "D":
+        default:
+          stateData.setDay(digit);
+          break;
+      }
+    },
+    notDigit(value) {
+      if (value === "" || /^\d+$/.test(value)) return false;
+      else return true;
+    },
+    change(event) {
+      const { value } = event.target;
+      if (value === "" || /^\d+$/.test(value)) {
+        const digit = parseInt(value);
+        switch (type) {
+          case "Y":
+            this.year(digit);
+            break;
+          case "M":
+            this.month(digit);
+            break;
+          case "D":
+          default:
+            this.day(digit);
+            break;
+        }
+      }
+    },
+    year(digit) {
+      if (this.fristDigit) {
+        if (this.fristDigit.length > 0 && this.fristDigit.length < 3) {
+          this.fristDigit = `${digit}`;
+          setFristDigit(`${digit}`);
+          this.update(digit);
+        } else {
+          this.update(digit);
+          this.fristDigit = "";
+          setFristDigit("");
+        }
+      } else {
+        if (digit !== 0) {
+          this.fristDigit = `${digit}`;
+          setFristDigit(`${digit}`);
+          this.update(digit);
+        } else {
+          this.render(digit);
+        }
+      }
+    },
+    month(digit) {
+      if (this.fristDigit === "") {
+        if (digit >= 0 && digit <= 1) {
+          this.fristDigit = `${digit}`;
+          setFristDigit(`${digit}`);
+          this.render(digit);
+        } else {
+          this.update(digit - 1);
+          this.scrollInput();
+        }
+      } else {
+        switch (true) {
+          case digit === 0:
+            this.update(0);
+            break;
+          case digit > 12:
+            this.update(11);
+            break;
+          default:
+            this.update(digit - 1);
+            break;
+        }
+        this.scrollInput();
+      }
+    },
+    day(digit) {
+      const { max, maxFristDigit } = stateData.getDayInMonth();
+      if (this.fristDigit === "") {
+        if (digit >= 0 && digit <= maxFristDigit) {
+          this.fristDigit = `${digit}`;
+          setFristDigit(`${digit}`);
+          stateData.renderDate(undefined, null, toDigit(`${digit}`));
+        } else {
+          this.update(digit);
+          this.scrollInput();
+        }
+      } else {
+        switch (true) {
+          case digit === 0:
+            this.update(1);
+            break;
+          case digit > max:
+            this.update(max);
+            break;
+          default:
+            this.update(digit);
+            break;
+        }
+        this.scrollInput();
+      }
+    },
+    render(digit) {
+      const update = toDigit(`${digit}`);
+
+      switch (type) {
+        case "Y":
+          stateData.renderDate(update, null, null);
+          break;
+        case "M":
+          stateData.renderDate(null, update, null);
+          break;
+        case "D":
+          stateData.renderDate(null, null, update);
+          break;
+      }
+    },
+    scrollInput(prev) {
+      this.fristDigit = "";
+      setFristDigit("");
+      if (prev) inputData.scrollActive(-1, index);
+      else inputData.scrollActive(1, index);
+    },
+    checkFristDigit() {
+      if (this.fristDigit) {
+        const digit = parseInt(this.fristDigit);
+        switch (type) {
+          case "Y":
+            if (digit === 0) {
+              this.update(1);
+            } else {
+              this.update(digit);
+            }
+            break;
+          case "M":
+            if (digit === 0) {
+              this.update(0);
+            } else {
+              this.update(digit - 1);
+            }
+            break;
+          case "D":
+            if (digit === 0) {
+              this.update(1);
+            } else {
+              this.update(digit);
+            }
+            break;
+        }
+        this.fristDigit = "";
+        setFristDigit("");
+      }
+    },
+    cancel() {
+      this.fristDigit = "";
+      setFristDigit("");
+      stateData.cancel(type);
+    },
+  }).current;
+
+  /* 
+             CONTROLLARE FRIST DIGIT NEL BLUR E NEL CAMBIO FOCUS
+           */
+
+  const handleKeydown = useCallback(
+    (event: KeyboardEvent<IE>) => {
+      if (disabled || readonly) return;
+      switch (event.code) {
+        case "Space":
+          event.preventDefault();
+          if (onSpaceDown) onSpaceDown();
+          break;
+        case "Backspace":
+        case "Delete":
+          event.preventDefault();
+          handle.cancel();
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          handle.scrollInput(true);
+          inputData.scrollActive(-1, index);
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          inputData.scrollActive(1, index);
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          break;
+        case "ArrowDown":
+          event.preventDefault();
+          break;
+      }
+    },
+    [disabled, handle, index, inputData, onSpaceDown, readonly],
+  );
+
+  const handleBlur = useCallback(() => {
+    if (disabled || readonly) return;
+    handle.checkFristDigit();
+    setActive(false);
+  }, [disabled, handle, readonly]);
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<IE>) => {
+      return handle.change(event);
+    },
+    [handle],
+  );
+  const toDigit = (value: string) => {
     return value.padStart(pad, "0");
   };
   function setClassName() {
-    let classname = "mod-input-core";
+    let classname = `mod-input-core ${type}`;
     if (active) classname += " mod-active";
     if (readonly) classname += " mod-readonly";
     if (disabled) classname += " mod-disabled";
     return classname;
   }
   return (
-    <Fragment>
+    <span className={setClassName()} onClick={select}>
+      {toDigit(value)}
       <input
-        id={id}
-        className={setClassName()}
+        className="mod-input"
         type="text"
         ref={ref}
-        value={renderValue(value)}
+        value={fristDigit}
         onChange={handleChange}
-        onClick={select}
-        onFocus={select}
         onBlur={handleBlur}
         onKeyDown={handleKeydown}
         disabled={disabled || readonly}
         readOnly={readonly}
       />
-    </Fragment>
+    </span>
   );
 };
 
-/* 
-  ------------------------------------------------------------------------- 
-  ----- TEST FUNCTION()
-  ------------------------------------------------------------------------- 
-*/
-
-function dateToNumber(date: Date) {
-  const clone = new Date(date);
-  return {
-    year: clone.getFullYear(),
-    month: clone.getMonth(),
-    day: clone.getDate(),
-  };
-}
-function dateToString(date: Date) {
-  const cloneDate = new Date(date);
-  const Y = cloneDate.getFullYear().toString();
-  const M = `${cloneDate.getMonth() + 1}`.padStart(2, "0");
-  const D = `${cloneDate.getDate()}`.padStart(2, "0");
-  return { Y, M, D };
-}
-function validDate(year: string, month: string, day: string) {
-  const y = parseInt(year);
-  const m = parseInt(month);
-  const d = parseInt(day);
-  if (isNaN(y) && isNaN(m) && isNaN(d)) return null;
-  if (isNaN(y) || isNaN(m) || isNaN(d)) return "invalid";
-  const date = new Date(y, m, d);
-  if (isValidDate(date)) return date;
-  else return "invalid";
-}
-
-function isDateRange(value: any) {
-  if (value instanceof DateRange) {
-    return value;
-  }
-  return new DateRange(null, null);
-}
 function isDate(value: any) {
   if (value instanceof Date) return value;
   return null;

@@ -6,7 +6,7 @@ import {
   ReactElement,
 } from "react";
 import { useModuleCore } from "../hook/useModuleCore";
-import { CoreProps, ModuleCore } from "./ModuleCore";
+import { CoreProps, ModuleCore } from "../ModuleCore";
 type ChangeEvt = ChangeEvent<HTMLInputElement>;
 type KeyboardEvt = KeyboardEvent<HTMLInputElement>;
 

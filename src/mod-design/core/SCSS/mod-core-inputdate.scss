@@ -3,28 +3,34 @@
   align-items: center;
   max-width: 100%;
   padding: 0 8px;
+  --selectionColor: var(--color);
   .mod-input-core {
+    position: relative !important;
+    user-select: none !important;
     position: relative;
     box-sizing: content-box;
     border: none;
     outline: none;
+    padding: 0 1px;
     font-size: 14px;
-    font-family: "Roboto Mono", monospace;
+    font-family: "Roboto Mono", "Courier New", Courier, monospace;
     caret-color: transparent;
     cursor: default;
     z-index: 1000;
-    &#Y {
+    &.Y {
       width: 4ch;
+      color: var(--fontColor);
     }
-    &#M,
-    &#D {
+    &.M,
+    &.D {
       width: 2ch;
+      color: var(--fontColor);
     }
-    &.mod-active,
-    ::selection {
-      color: #fff;
-      background-color: var(--mainColor);
+    &.mod-active {
+      --fontColor: #fff;
+      background-color: var(--color);
     }
+
     &.mod-readonly {
       user-select: none;
       pointer-events: none;
@@ -33,6 +39,24 @@
       pointer-events: none;
       opacity: 0.3;
     }
+    .mod-input {
+      cursor: default;
+      user-select: none !important;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      outline: none !important;
+      border: none !important;
+      padding: 0 !important;
+      color: transparent;
+      caret-color: transparent;
+      opacity: 0;
+    }
+  }
+  .mod-input-date-separator {
+    color: var(--fontColor);
   }
 }
 

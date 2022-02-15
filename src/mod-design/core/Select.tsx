@@ -25,7 +25,7 @@ import { CloseIcon, FilterIcon } from "../icons";
 import FatFilterIcon from "../icon/FatFilterIcon";
 import { useModuleCore } from "./hook/useModuleCore";
 import { SetOption } from "./interfaces/select";
-import { CoreProps, ModuleCore } from "./mod-component/ModuleCore";
+import { CoreProps, ModuleCore } from "./ModuleCore";
 import "./SCSS/mod-core-select.scss";
 
 type RE = ReactElement;

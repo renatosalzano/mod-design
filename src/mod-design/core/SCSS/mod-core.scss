@@ -6,7 +6,7 @@
   --mainColor: rgb(72, 140, 228);
   --successColor: green;
   --warningColor: yellow;
-  --errorColor: rgba(192, 27, 27, 0.925);
+  --errorColor: #f44336;
   --hoverColor: rgba(136, 149, 163, 0.1);
   --disabledColor: rgba(48, 48, 48, 0.25);
 }
@@ -30,16 +30,20 @@
   }
   &.mod-success {
     --color: var(--successColor);
+    --fontColor: var(--color);
   }
   &.mod-warning {
     --color: var(--warningColor);
+    --fontColor: var(--color);
   }
   &.mod-error,
   &.error {
     --color: var(--errorColor);
+    --fontColor: var(--color);
   }
   &.disabled {
     --color: var(--disabledColor);
+    --fontColor: var(--color);
   }
   &.pointer {
     cursor: pointer;
@@ -106,6 +110,7 @@
     left: 4px;
     font-size: 12px;
     color: var(--color);
+    white-space: pre-wrap;
   }
 }
 

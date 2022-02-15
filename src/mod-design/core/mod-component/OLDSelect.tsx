@@ -21,7 +21,7 @@ import { useModuleCore } from "../hook/useModuleCore";
 import "../SCSS/mod-core-select.scss";
 import TextInput from "./TextInput";
 import InputChips from "./InputChips";
-import { CoreProps } from "./ModuleCore";
+import { CoreProps } from "../ModuleCore";
 import {
   HandleOptionClick,
   IndexChip,

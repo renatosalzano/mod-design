@@ -13,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { CoreProps, ModuleCore } from "./ModuleCore";
+import { CoreProps, ModuleCore } from "../ModuleCore";
 import "../SCSS/mod-core-input-chip.scss";
 type ChangeEvt = ChangeEvent<HTMLInputElement>;
 type MouseEvt = MouseEvent<HTMLInputElement>;

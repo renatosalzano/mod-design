@@ -29,17 +29,25 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
       value={date}
       onChange={handleDate}
       openTo="day"
-      minDate={new Date(2022, 0, 5)}
-      maxDate={new Date(2025, 0, 15)}
+      minDate={new Date(2024, 1, 8)}
+      maxDate={new Date(2028, 0, 15)}
       option={{
         weekday: "short",
         headerButton: "2-button",
         monthOption: { button: "long", calendar: "short" },
-        actionButton: {
-          apply: "Conferma",
-          cancel: "Annulla",
-          back: "Indietro",
-        },
+      }}
+      localization={{
+        locale: "LOL",
+        fristDayWeek: "monday",
+        startDate: "data di inizio",
+        endDate: "data di fine",
+        selectDate: "Seleziona Data",
+        today: "oggi",
+        apply: "Conferma",
+        cancel: "Annulla",
+        fix: "Aggiusta",
+        mustBeLessThan: "deve essere minore di",
+        mustBeGreaterThan: "deve essere maggiore di",
       }}
       inputProps={{
         dateSeparator: "/",
