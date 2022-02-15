@@ -20,23 +20,8 @@ import InputDate from "./InputDate";
 import { ArrowIcon, CalendarIcon } from "../icons";
 import "./SCSS/mod-core-datepicker.scss";
 import { useScrollBlock } from "../utils/blockScroll";
-import {
-  checkRange,
-  checkIsRange,
-  DateRange,
-  isValidRange,
-  toDateRange,
-  toRange,
-} from "../utils/DateRange";
-import {
-  DateX,
-  compareDate,
-  toDate,
-  isValidDate,
-  isEqualDate,
-  testLocale,
-  toLocaleString,
-} from "../utils/DateX";
+import { checkRange, checkIsRange, toRange } from "../utils/DateRange";
+import { DateX, toDate, isEqualDate, testLocale } from "../utils/DateX";
 import { usePrevious } from "../utils/usePrevious";
 import { ClickInRange } from "../utils/useDebounce";
 
@@ -64,11 +49,6 @@ interface Localization {
   mustBeLessThan: string;
   mustBeGreaterThan: string;
 }
-interface CustomText {
-  actionButton?: { cancel: string; apply: string; back: string; fix: string };
-  rangeHeader?: { startDate: string; endDate: string; selectDate: string };
-  todayPopup?: string;
-}
 
 interface InputProps {
   dateSeparator?: DateSeparator;
@@ -76,8 +56,6 @@ interface InputProps {
   rangeSeparator?: string;
   readOnly?: boolean;
 }
-
-const DATE_PICKER = "<DatePicker ";
 
 interface Props extends CoreProps {
   name?: string;
@@ -1277,7 +1255,6 @@ const CalendarArrow: FC = () => {
   const { onArrowClick, setDisableArrow } = useCalendarCore();
   const [disableArrowL, setDisableL] = useState(false);
   const [disableArrowR, setDisableR] = useState(false);
-  const _ = useRef(new ClickInRange());
 
   const onArrowLeft = () => {
     onArrowClick(-1);
@@ -1624,16 +1601,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   children,
 }) => {
   /* ----- RENDER DATA ---------------------------------------------------- */
-  const {
-    monthsLabel,
-    monthsButton,
-    dayOffset,
-    actionButton,
-    monthButton,
-    rangeMode,
-    errorMode,
-    onChange,
-  } = useGetConst();
+  const { monthsLabel, monthsButton, dayOffset, actionButton, monthButton, rangeMode, onChange } =
+    useGetConst();
 
   /* ----- SETTERS -------------------------------------------------------- */
   const setContent = useRef<SetContent>((_content: RE[]) => null);
@@ -2143,14 +2112,9 @@ interface CalendarStore {
 }
 /* 
   ------------------------------------------------------------------------- 
-  ----- GET CONTENT FUNCTION
+  ----- GET CONST CONTENT FUNCTION
   ------------------------------------------------------------------------- 
 */
-
-const cloneDate = (date: Date, addYear = 0, addMonth = 0, addDay = 0) => {
-  const d = new Date(date);
-  return new Date(d.getFullYear() + addYear, d.getMonth() + addMonth, d.getDate() + addDay);
-};
 
 const useGetMonth = (
   locale: string,
