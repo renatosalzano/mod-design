@@ -17,9 +17,7 @@ import "./SCSS/mod-core-inputdate.scss";
 type DateFormat = "D/M/Y" | "M/D/Y" | "Y/M/D";
 type DateSeparator = "/" | "." | "-" | " ";
 type DatePlaceholder = { dd: string; mm: string; yyyy: string };
-type OnChangeDate = (value: Date | null) => void;
-type OnChangeDateRange = (value: DateRange) => void;
-type OnChange = OnChangeDate | OnChangeDateRange;
+type Value = { start: Date | string | null; end: Date | string | null } | (Date | string | null);
 interface Option {
   rangeErrorMessage?: { lessMinDate: string; greaterMaxDate: string };
 }
@@ -27,7 +25,7 @@ interface Option {
 interface Props extends CoreProps {
   name?: string;
   range?: boolean;
-  value: DateRange | (Date | null);
+  value: Value;
   minDate?: Date | null;
   maxDate?: Date | null;
   dateFormat?: DateFormat;
@@ -36,13 +34,48 @@ interface Props extends CoreProps {
   rangeSeparator?: string;
   readOnly?: boolean;
   option?: Option;
+  returnType?: "date" | "date-string";
   onSpaceDown?: () => void;
-  onChange: OnChange;
+  onChange: <T extends Value>(value: T) => void;
   skipCheck?: boolean;
 }
 
 type IE = HTMLInputElement;
 type InputType = "D" | "M" | "Y";
+
+interface RangeStatus {
+  start: InputStatus;
+  end: InputStatus;
+}
+interface InputSetter {
+  active(): void;
+  idle(): void;
+  getIndex: number;
+}
+
+interface InputData {
+  range?: boolean;
+  value: any;
+  lenght: number;
+  active: number;
+  scrollIndex: number;
+  rangeStatus: RangeStatus;
+  rangeError: boolean;
+  returnType: "date" | "date-string";
+  rangeValue: { start: Date | null; end: Date | null };
+  update(value: any): void;
+  scrollActive(scroll: 1 | -1, currIndex: number): void;
+  focus(index?: number): void;
+  handleChange<T extends Value>(value: T): void;
+  handleBlur(): void;
+  subscribe(index: number, setter: InputSetter): void;
+  unsubscribe(index: number): void;
+  setValue(value: any): void;
+  setRangeStatus(range: "start" | "end", status: InputStatus): void;
+  setRangeValue(type: "start" | "end", value: Date | null): void;
+  toDateString(value: any): string | { start: string; end: string };
+  set: { [key: number]: InputSetter };
+}
 
 const InputDate: FC<Props> = ({
   name,
@@ -52,6 +85,7 @@ const InputDate: FC<Props> = ({
   dateSeparator = "/",
   datePlaceholder = { dd: "dd", mm: "mm", yyyy: "yyyy" },
   rangeSeparator = "-",
+  returnType = "date",
   minDate = null,
   maxDate = null,
   focused,
@@ -60,23 +94,119 @@ const InputDate: FC<Props> = ({
   error,
   onSpaceDown,
   onChange,
+  themeColor,
   skipCheck,
   border = false,
 }) => {
-  const { isFocus, isDisabled, isError } = useModuleCore({
+  const { isFocus, isDisabled, isError, setFocus, setBlur } = useModuleCore({
     focused: focused,
     disabled: disabled,
     error: error,
   });
 
-  /* FARE IL CHECK DEI PROPS */
+  const inputData = useRef<InputData>({
+    range,
+    value,
+    lenght: range ? 5 : 2,
+    active: -1,
+    scrollIndex: 0,
+    rangeStatus: { start: "null", end: "null" },
+    rangeValue: { start: null, end: null },
+    rangeError: false,
+    returnType,
+    update(value) {
+      if (this.range) {
+        /* ----- RANGE */
+        const { start, end } = clone(value, true);
+        if (start) this.rangeStatus.start = "filled";
+        if (end) this.rangeStatus.end = "filled";
+        this.rangeValue = clone(value, true);
+      } else {
+        /* ----- NOT RANGE */
+      }
+    },
+    scrollActive(scroll: 1 | -1, currIndex: number) {
+      let index = currIndex + scroll;
+      if (index < 0) index = 0;
+      if (index > this.lenght) index = this.lenght;
+      this.scrollIndex = index;
+      this.set[currIndex].idle();
+      this.set[index].active();
+    },
+    focus(index) {
+      if (index) this.active = index;
+      setFocus();
+    },
+    handleChange(value) {
+      switch (returnType) {
+        case "date-string":
+          const output = this.toDateString(value);
+          onChange(output);
+          break;
+        default:
+          onChange(value);
+      }
+    },
+    toDateString(value) {
+      if (this.range) {
+        const start = value.start ? new DateX(value.start).toStringDigit() : "null";
+        const end = value.end ? new DateX(value.end).toStringDigit() : "null";
+        return { start, end };
+      } else {
+        return value ? new DateX(value).toStringDigit() : "null";
+      }
+    },
+    setValue(value) {
+      this.value = value;
+    },
+    setRangeStatus(range, status) {
+      this.rangeStatus[range] = status;
+    },
+    setRangeValue(type: "start" | "end", value: Date | null) {},
+    handleBlur() {
+      if (this.range) {
+        if (this.rangeStatus.start === "unfilled" || this.rangeStatus.end === "unfilled") {
+          this.handleChange(this.value);
+        }
+      } else {
+        /* NOT RANGE */
+      }
+
+      setBlur();
+    },
+    subscribe(index, setter) {
+      this.set[index] = setter;
+    },
+    unsubscribe(index) {
+      delete this.set[index];
+    },
+    set: {},
+  }).current;
+
+  function clone(value: any, range: boolean): any {
+    if (range) {
+      const start = value.start ? new Date(value.start) : null;
+      const end = value.end ? new Date(value.end) : null;
+      const clone = { start, end };
+      return { ...clone };
+    } else {
+      const date = value ? new Date(value) : null;
+      return date;
+    }
+  }
+
+  useEffect(() => {
+    inputData.update(value);
+  }, [inputData, value]);
 
   const handleChange = useCallback(
     (value: any) => {
-      onChange(value);
+      inputData.handleChange(value);
     },
-    [onChange],
+    [inputData],
   );
+
+  const handleTrigger = useCallback(() => inputData.handleBlur(), [inputData]);
 
   return (
     <ModuleCore
@@ -84,7 +214,8 @@ const InputDate: FC<Props> = ({
       focused={isFocus}
       error={isError}
       disabled={isDisabled}
-      border={border}>
+      border={border}
+      themeColor={themeColor}>
       <InputDateCore
         value={value}
         range={range}
@@ -92,6 +223,9 @@ const InputDate: FC<Props> = ({
         dateSeparator={dateSeparator}
         datePlaceholder={datePlaceholder}
         error={isError}
+        focus={isFocus}
+        inputData={inputData}
+        onTriggerClick={handleTrigger}
         onSpaceDown={onSpaceDown}>
         {range ? (
           <ModInputDateRange
@@ -122,45 +256,22 @@ const InputDate: FC<Props> = ({
 
 export default InputDate;
 type InputStatus = "null" | "filled" | "unfilled";
-interface RangeStatus {
-  start: InputStatus;
-  end: InputStatus;
-}
-interface InputSetter {
-  active(): void;
-  idle(): void;
-  getIndex: number;
-}
+
 /* 
   ------------------------------------------------------------------------- 
   ----- <INPUT CORE />
   ------------------------------------------------------------------------- 
 */
-interface InputData {
-  range?: boolean;
-  value: any;
-  lenght: number;
-  active: number;
-  scrollIndex: number;
-  rangeStatus: RangeStatus;
-  rangeError: boolean;
-  update(value: any): void;
-  scrollActive(scroll: 1 | -1, currIndex: number): void;
-  focus(index?: number): void;
-  subscribe(index: number, setter: InputSetter): void;
-  unsubscribe(index: number): void;
-  handleBlur(date: Date): void;
-  setValue(value: any): void;
-  setRangeStatus(range: "start" | "end", status: InputStatus): void;
-  set: { [key: number]: InputSetter };
-}
 interface InputDateCoreProps {
   value: any;
   range?: boolean;
   error: boolean;
+  focus: boolean;
   dateFormat: DateFormat;
   dateSeparator: DateSeparator;
   datePlaceholder: DatePlaceholder;
+  inputData: InputData;
+  onTriggerClick: () => void;
   onSpaceDown?: () => void;
 }
 
@@ -179,10 +290,13 @@ const InputDateCore: FC<InputDateCoreProps> = ({
   range,
   value,
   error,
+  focus,
   dateFormat,
   datePlaceholder,
   dateSeparator,
+  inputData,
   onSpaceDown,
+  onTriggerClick,
   children,
 }) => {
   /* 
@@ -190,65 +304,6 @@ const InputDateCore: FC<InputDateCoreProps> = ({
   ----- INPUT DATA()
   ------------------------------------------------------------------------- 
   */
-  const [focus, setFocus] = useState(false);
-  const inputData = useRef<InputData>({
-    range,
-    value,
-    lenght: range ? 5 : 2,
-    active: -1,
-    scrollIndex: 0,
-    rangeStatus: { start: "null", end: "null" },
-    rangeError: false,
-    update(value) {
-      if (this.range) {
-        /* ----- RANGE */
-        const { start, end } = value;
-        if (start) this.rangeStatus.start = "filled";
-        if (end) this.rangeStatus.end = "filled";
-      } else {
-        /* ----- NOT RANGE */
-      }
-    },
-    scrollActive(scroll: 1 | -1, currIndex: number) {
-      let index = currIndex + scroll;
-      if (index < 0) index = 0;
-      if (index > this.lenght) index = this.lenght;
-      this.scrollIndex = index;
-      this.set[currIndex].idle();
-      this.set[index].active();
-    },
-    focus(index) {
-      if (index) this.active = index;
-      setFocus(true);
-    },
-    handleBlur() {
-      switch (this.rangeStatus.start) {
-        case "filled":
-          break;
-        case "unfilled":
-          break;
-        case "null":
-          break;
-      }
-    },
-    setValue(value) {
-      this.value = value;
-    },
-    setRangeStatus(range, status) {
-      this.rangeStatus[range] = status;
-    },
-    subscribe(index, setter) {
-      this.set[index] = setter;
-    },
-    unsubscribe(index) {
-      delete this.set[index];
-    },
-    set: {},
-  }).current;
-
-  useEffect(() => {
-    inputData.update(value);
-  }, [inputData, value]);
 
   return (
     <InputDateContext.Provider
@@ -262,7 +317,7 @@ const InputDateCore: FC<InputDateCoreProps> = ({
         onSpaceDown,
       }}>
       {children}
-      {focus && <div className="mod-trigger" onClick={() => setFocus(false)} />}
+      {focus && <div className="mod-trigger" onClick={onTriggerClick} />}
     </InputDateContext.Provider>
   );
 };
@@ -306,10 +361,14 @@ const ModInputDateRange: FC<InputDateRangeProps> = ({
   const [maxDate, setMaxDate] = useState(() => init(end, defaultMaxDate)); */
 
   const rangeDate = useRef({
-    value: value,
+    value: { start: null, end: null } as any,
     update(value: any) {
-      this.value = value;
-      setRange(this.value);
+      let tempObj = {} as { [key: string]: any };
+      for (var i in value) {
+        tempObj[i] = value[i];
+      }
+      this.value = { ...tempObj };
+      setRange({ ...tempObj });
     },
     setStart(value: Date | null) {
       this.value.start = value;
@@ -322,7 +381,6 @@ const ModInputDateRange: FC<InputDateRangeProps> = ({
       this.handleChange();
     },
     handleChange() {
-      console.log("UPDATE", this.value);
       onChange(this.value);
     },
   }).current;
@@ -458,7 +516,7 @@ const ModInputDate: FC<InputDateProps> = ({
       this.status = "filled";
       this.value = date;
       this.dateIndex = date.getIndexDate();
-      const { year, month, day } = date.toStringDigit();
+      const { year, month, day } = date.toObjectDigit();
       this.renderDate(year, month, day);
       inputData.setRangeStatus(rangeType, "filled");
     },

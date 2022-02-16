@@ -29,12 +29,15 @@
 }
 .mod-primary {
   background-color: var(--color);
-  color: #fff;
+  color: var(--fontColorSecondary);
   font-weight: 500;
 }
 
-.mod-hover:hover {
-  background-color: var(--hoverColor);
+.mod-hover {
+  color: var(--fontColor);
+  &:hover {
+    background-color: var(--hoverColor);
+  }
 }
 
 /* 

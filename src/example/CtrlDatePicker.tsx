@@ -10,17 +10,10 @@ type RangeDate = {
   max: Date | null;
 };
 const CtrlDatePicker: FC<Props> = ({ name }) => {
-  const [date, setDate] = useState<Date | null>(null);
+  const [date, setDate] = useState<Date | null>(new Date());
 
   function handleDate(value: Date | null) {
     setDate(value);
-  }
-
-  function toString(value: RangeDate) {
-    let str = "";
-    if (value.min) str += ` min: ${value.min.toLocaleDateString()}`;
-    if (value.max) str += ` max: ${value.max.toLocaleDateString()}`;
-    return str;
   }
 
   return (

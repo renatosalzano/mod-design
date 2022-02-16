@@ -1,5 +1,5 @@
 import { FC, memo, ReactElement, useEffect, useRef, useState } from "react";
-import HelperText from "./mod-component/HelperText";
+import HelperText from "./HelperText";
 import "./SCSS/mod-core.scss";
 
 export interface CoreProps {
@@ -11,7 +11,7 @@ export interface CoreProps {
   themeColor?: string;
   color?: "main" | "success" | "warning" | "error";
   inputIcon?: ReactElement;
-  helperText?: string;
+  helperText?: string | string[];
 }
 
 const ModuleCore: FC<CoreProps> = memo(
@@ -87,23 +87,17 @@ interface ModuleCoreArgs {
   disabled?: boolean;
   error?: boolean;
   color?: "main" | "success" | "warning" | "error";
-  helper?: string;
+  helper?: string | string[];
 }
 
-type UseModuleCore = ({
-  focused,
-  disabled,
-  error,
-  color,
-  helper,
-}: ModuleCoreArgs) => {
+type UseModuleCore = ({ focused, disabled, error, color, helper }: ModuleCoreArgs) => {
   isFocus: boolean;
   isDisabled: boolean;
   isError: boolean;
-  helperTextCore: string;
+  helperTextCore: string | string[];
   setFocus(): void;
   setBlur(): void;
-  setError(message?: string): void;
+  setError(message?: string | string[]): void;
   clearError(): void;
 };
 
@@ -116,13 +110,13 @@ export const useModuleCore: UseModuleCore = ({
   const [isError, setIsError] = useState(error);
   const [isFocus, setFocus] = useState(focused);
   const [isDisabled, setDisabled] = useState(disabled);
-  const [helperTextCore, setHelperText] = useState(helper);
+  const [helperTextCore, setHelperText] = useState<string | string[]>(helper);
   const helperControl = useRef({
     helperText: helper,
-    setHelper(text: string) {
+    setHelper(text: string | string[]) {
       setHelperText(text);
     },
-    updateHelper(text: string) {
+    updateHelper(text: string | string[]) {
       this.helperText = text;
       setHelperText(text);
     },
@@ -155,8 +149,8 @@ export const useModuleCore: UseModuleCore = ({
     setBlur() {
       setFocus(false);
     },
-    setError(message?: string) {
-      if (message) {
+    setError(message?: string | string[]) {
+      if (message !== undefined) {
         helperControl.setHelper(message);
         setHelperText(message);
       }

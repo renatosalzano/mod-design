@@ -157,7 +157,6 @@ export function checkRange(
     }
   }
   if (minRange) {
-    console.log(minRange.compareInRange(minDate, maxDate));
     switch (minRange.compareInRange(minDate, maxDate)) {
       case "less min":
         errorMessage.push(`Start Date must be greater than ${minDateString}`);

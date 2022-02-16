@@ -46,8 +46,20 @@ export class DateX extends Date {
     const lastDay = new Date(year, month + 1, 0).getDate();
     return lastDay;
   }
-  setYM(year: number, month: number) {
+  setYM(year: number, month: number, minDate: Date | null = null, maxDate: Date | null = null) {
     const { day } = toIndexDate(this);
+    const newDate = new DateX(year, month, day);
+    switch (newDate.compareInRange(minDate, maxDate)) {
+      case "less min":
+        return new DateX(minDate as Date).setD(day);
+      case "greater max":
+        return new DateX(maxDate as Date).setD(day);
+      default:
+        return newDate;
+    }
+  }
+  setD(day: number) {
+    const { year, month } = toIndexDate(this);
     return new DateX(year, month, day);
   }
   updateDate(y: number = 0, m: number = 0, d: number = 0) {
@@ -93,7 +105,7 @@ export class DateX extends Date {
       case max && date > max:
         return "greater max";
       default:
-        return "out range";
+        return "error";
     }
   }
 
@@ -263,12 +275,19 @@ export class DateX extends Date {
     const { year, month, day } = toIndexDate(this);
     return toStringDate(year, month, day);
   }
-  toStringDigit() {
+  toObjectDigit() {
     const { year, month, day } = toIndexDate(this);
     const y = `${year}`.padStart(4, "0");
     const m = `${month + 1}`.padStart(2, "0");
     const d = `${day}`.padStart(2, "0");
     return { year: y, month: m, day: d };
+  }
+  toStringDigit() {
+    const { year, month, day } = toIndexDate(this);
+    const y = `${year}`.padStart(4, "0");
+    const m = `${month + 1}`.padStart(2, "0");
+    const d = `${day}`.padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }
 }
 

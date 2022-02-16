@@ -11,6 +11,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -57,6 +58,9 @@ interface InputProps {
   readOnly?: boolean;
 }
 
+type TRange = { start: Date | null; end: Date | null };
+type TDate = Date | null;
+
 interface Props extends CoreProps {
   name?: string;
   /**
@@ -64,12 +68,13 @@ interface Props extends CoreProps {
    * @warning In range mode, value must be { start: Date | null, end: Date | null }
    * @example <DatePicker range value={{start,end}} />
    */
-  value: Date | { start: Date | null; end: Date | null } | null;
+  value: TRange | TDate;
   /**
    * Enable range mode.
    * @param range Can be set to "2-calendar" to display two calendars.
    * @warning In this mode, value must be { start: Date | null, end: Date | null }
-   * @example <DatePicker range value={{start,end}} onChange={(value:{start,end}) => {...}} />
+   * @example <DatePicker value={Date()} onChange={(value:Date()) => {...}} />
+   * <DatePicker range value={{start,end}} onChange={(value:{start,end}) => {...}} />
    */
   range?: boolean | "2-calendar";
   openTo?: "day" | "month" | "year";
@@ -106,8 +111,8 @@ interface Props extends CoreProps {
   actionButton?: boolean;
   inputProps?: InputProps;
   onChange:
-    | ((value: Date | null) => any)
-    | ((value: { start: Date | null; end: Date | null }) => any);
+    | ((value: Date | null) => void)
+    | ((value: { start: Date | null; end: Date | null }) => void);
 }
 
 const DatePicker: FC<Props> = ({
@@ -141,6 +146,7 @@ const DatePicker: FC<Props> = ({
   disabled,
   error,
   helperText,
+  themeColor,
   onChange,
 }) => {
   /* 
@@ -150,8 +156,8 @@ const DatePicker: FC<Props> = ({
   */
 
   const [dropdown, setDropdown] = useState(false);
+  const [close, setClose] = useState(false);
   const [stateValue, setStateValue] = useState<any>(value);
-  const handleChange = useRef<(value: any) => any>(onChange).current;
 
   /* 
   ------------------------------------------------------------------------- 
@@ -192,7 +198,7 @@ const DatePicker: FC<Props> = ({
     },
   }).current;
 
-  const init = useRef(() => {
+  const check = useRef(() => {
     let warning = "";
     /* 
       CHECK LANGUAGE
@@ -211,11 +217,15 @@ const DatePicker: FC<Props> = ({
         setMinDate(null);
       }
     }
+
+    let minDateStr = minDate ? minDate.toLocaleDateString() : "";
+    let maxDateStr = maxDate ? maxDate.toLocaleDateString() : "";
     if (range) {
       /* 
         CALENDAR RANGE CHECK 
       */
       let rangeWarning = "";
+
       switch (checkIsRange(value)) {
         case "is range":
           const {
@@ -231,8 +241,7 @@ const DatePicker: FC<Props> = ({
             startStr = value.start ? value.start.toLocaleDateString() : "";
             endStr = value.end ? value.end.toLocaleDateString() : "";
           }
-          let minDateStr = minDate ? minDate.toLocaleDateString() : "";
-          let maxDateStr = maxDate ? maxDate.toLocaleDateString() : "";
+
           if (invalidRange) {
             rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE GREATER OR EQUAL THAN end: ${endStr}`;
           }
@@ -254,19 +263,40 @@ const DatePicker: FC<Props> = ({
           break;
       }
       if (rangeWarning) {
+        /* 
+          RESET VALUE
+        */
         warning += info.value + rangeWarning + " }";
+        onChange({ start: null, end: null } as any);
+        setStateValue({ start: null, end: null });
       }
     } else {
       /* 
-        CALENDAR CHECK 
+        CALENDAR CHECK (NOT RANGE)
       */
+      if (value instanceof Date) {
+        const date = new DateX(value);
+        let propsWarning = "";
+        let dateString = value.toLocaleDateString();
+        switch (date.compareInRange(minDate, maxDate)) {
+          case "less min":
+            propsWarning += `${dateString} CANNOT BE LESS THAN MIN DATE: ${minDateStr}`;
+            break;
+          case "greater max":
+            propsWarning += `${dateString} CANNOT BE GREATER THAN MAX DATE: ${maxDateStr}`;
+            break;
+        }
+        if (propsWarning) {
+          warning += info.value + propsWarning + " }";
+          setStateValue(null);
+          onChange(null as any);
+        }
+      }
     }
     /* 
         HANDLE WARNING
     */
     if (warning) {
-      handleChange({ start: null, end: null });
-      setStateValue({ start: null, end: null });
       const tag = range ? info.rangeTag : info.tag;
       const outputWarning = info.warn() + tag + warning + " />\n ";
       console.warn(outputWarning);
@@ -281,24 +311,38 @@ const DatePicker: FC<Props> = ({
   });
 
   useEffect(() => {
-    init.current();
+    check.current();
   }, []);
 
   const data = useRef({
     inputName: name,
-    value: value,
     prevValue: null as any,
+    inputValue: "" as any,
     minDate: minDate,
     maxDate: maxDate,
-    range: range,
+    range: !!range,
     error: isError,
     locale: "",
     localDate: "null",
     localMinDate: "null",
     localMaxDate: "null",
+    init() {
+      this.prevValue = clone(value, this.range);
+      this.locale = locale;
+      this.minDate = checkedMinDate;
+      this.maxDate = maxDate;
+      if (minDate) {
+        this.localMinDate = minDate.toLocaleDateString(this.locale);
+      }
+      if (maxDate) {
+        this.localMaxDate = maxDate.toLocaleDateString(this.locale);
+      }
+      this.log();
+    },
     handleInputValue(value: any) {
-      console.log(value);
+      this.inputValue = value;
       if (this.range) {
+        const rangeDate = this.toRangeDate(value);
         const { startDate, endDate, mustBeLessThan, mustBeGreaterThan } = localization;
         const {
           invalidRange,
@@ -306,7 +350,7 @@ const DatePicker: FC<Props> = ({
           startGreaterMaxDate,
           endLessMinDate,
           endGreaterMaxDate,
-        } = checkRange(value, minDate, maxDate);
+        } = checkRange(rangeDate, minDate, maxDate);
         /* 
           CHECK INPUT RANGE ERRORS 
         */
@@ -327,74 +371,29 @@ const DatePicker: FC<Props> = ({
           errorMessage.push(`${endDate} ${mustBeLessThan} ${this.localMaxDate}`);
         }
         if (errorMessage.length > 0) {
-          let printError = "";
-          errorMessage.forEach((message, index) => {
-            if (index < errorMessage.length) {
-              printError += `${message}\n`;
-            } else {
-              printError += message;
-            }
-          });
-          this.handleError(true, printError);
-          this.updateInputValue({ start: null, end: null });
+          this.handleError(true, errorMessage);
+          setStateValue(rangeDate);
+          this.log();
         } else {
           this.handleError(false);
-          this.updateInputValue({ ...value });
-          this.prevValue = { ...value };
+          this.handleChange(rangeDate);
         }
-        this.log();
       } else {
         /* 
           CHECK INPUT VALUE
         */
       }
     },
-    update(locale: string, value: any, minDate: Date | null, maxDate: Date | null) {
-      this.value = value;
-      this.locale = locale;
-      this.minDate = minDate;
-      this.maxDate = maxDate;
-      if (minDate) {
-        this.localMinDate = minDate.toLocaleDateString(this.locale);
-      } else {
-        this.localMinDate = "null";
-      }
-      if (maxDate) {
-        this.localMaxDate = maxDate.toLocaleDateString(this.locale);
-      } else {
-        this.localMaxDate = "null";
-      }
+    toRangeDate(value: { start: string; end: string }) {
+      const start = value.start === "null" ? null : new Date(value.start);
+      const end = value.end === "null" ? null : new Date(value.end);
+      return { start, end };
     },
-    updateInputValue(inputValue: any) {
-      /* 
-          RANGE VALUE
-      */
-      if (this.range) {
-        this.value = { ...inputValue };
-        this.handleChange = { ...inputValue };
-        let startString = "null";
-        let endString = "null";
-        if (inputValue.start instanceof Date) {
-          startString = inputValue.start.toLocaleDateString(this.locale);
-        }
-        if (inputValue.end instanceof Date) {
-          endString = inputValue.end.toLocaleDateString(this.locale);
-        }
-        this.localDate = `${startString} - ${endString}`;
-      } else {
-        /* 
-          NOT RANGE VALUE
-        */
-        if (inputValue instanceof Date) {
-          this.value = new Date(inputValue);
-          this.localDate = this.value.toLocaleDateString(this.locale);
-        } else {
-          this.value = null;
-          this.localDate = "null";
-        }
-      }
+    resetValue(): any {
+      if (this.range) return { start: null, end: null };
+      else return null;
     },
-    handleError(error: boolean, message?: string) {
+    handleError(error: boolean, message?: string | string[]) {
       this.error = error;
       if (error) {
         setError(message);
@@ -403,48 +402,62 @@ const DatePicker: FC<Props> = ({
       }
     },
     handleApply(value: any) {
-      if (this.range) {
-        this.prevValue = { ...value };
-      } else {
-        if (value instanceof Date) {
-          this.prevValue = new Date(value);
-        }
-      }
-      setStateValue(value);
-      onChange(value);
+      this.handleChange(value);
+      this.log();
     },
     handleCancel() {
-      setStateValue(this.value);
+      setStateValue(this.prevValue);
     },
     handleFix() {
-      this.handleError(false);
-      setStateValue(this.value);
-      this.handleChange(this.value);
+      this.handleChange(clone(this.prevValue, this.range));
+      this.handleClose(true);
     },
     handleReset() {
-      if (this.range) {
-        this.handleChange({ start: null, end: null });
-      } else {
-        this.handleChange(null);
-      }
+      this.handleChange(this.resetValue());
     },
     handleChange(value: any) {
       setStateValue(value);
-      if (!this.error) {
-        onChange(value);
-      }
+      onChange(value);
+      this.prevValue = clone(value, this.range);
       this.log();
+    },
+    handleSelector(value: any) {
+      setStateValue(value);
+      console.log(value);
+    },
+    handleClose(clearError?: boolean) {
+      setClose(true);
+      setTimeout(() => {
+        setClose(false);
+        setDropdown(false);
+        if (clearError) {
+          this.handleError(false);
+        }
+      }, 100);
     },
     log() {
       console.table(this);
     },
   }).current;
 
+  function clone(value: any, range: boolean): any {
+    if (range) {
+      const start = value.start ? new Date(value.start) : null;
+      const end = value.end ? new Date(value.end) : null;
+      const clone = { start, end };
+      Object.freeze(clone);
+      return clone;
+    } else {
+      const date = value ? new Date(value) : null;
+      return date;
+    }
+  }
+
   useEffect(() => {
     if (checked) {
-      data.update(locale, value, checkedMinDate, maxDate);
+      data.init();
     }
-  }, [checked, checkedMinDate, data, locale, maxDate, value]);
+  }, [checked, data]);
 
   function setClassName() {
     let classname = "mod-datepicker";
@@ -457,10 +470,14 @@ const DatePicker: FC<Props> = ({
   const handleCancel = useCallback(() => data.handleCancel(), [data]);
   const handleFix = useCallback(() => data.handleFix(), [data]);
   const handleReset = useCallback(() => data.handleReset(), [data]);
+  const handleChange = useCallback((value: any) => data.handleChange(value), [data]);
+  const handleSelector = useCallback((value: any) => data.handleSelector(value), [data]);
+  const handleClose = useCallback(() => data.handleClose(), [data]);
 
   return (
     <ModuleCore
       cssCustom={setClassName()}
+      themeColor={themeColor}
       focused={isFocus}
       error={isError}
       disabled={isDisabled}
@@ -472,17 +489,19 @@ const DatePicker: FC<Props> = ({
           range={range}
           value={stateValue}
           stateValue={stateValue}
-          setStateValue={setStateValue}
           locale={locale}
           localization={localization}
           actionButton={range ? false : actionButton}
           option={option}
           helperText={helperTextCore}
+          closeAnimation={close}
           handleApply={handleApply}
           handleCancel={handleCancel}
           handleReset={handleReset}
           handleFix={handleFix}
-          onChange={onChange}>
+          handleSelector={handleSelector}
+          handleClose={handleClose}
+          onChange={handleChange}>
           <DatePickerInput
             range={range}
             name={name}
@@ -491,6 +510,7 @@ const DatePicker: FC<Props> = ({
             maxDate={maxDate}
             dateFormat={dateFormat}
             inputProps={inputProps}
+            themeColor={themeColor}
             onIconClick={() => setDropdown(true)}
             onIconTouch={() => null}
             onSpaceDown={() => setDropdown(true)}
@@ -504,7 +524,6 @@ const DatePicker: FC<Props> = ({
             maxDate={maxDate}
             openTo={openTo}
             dropdown={dropdown}
-            setDropdown={setDropdown}
             handleCancel={handleCancel}
           />
         </ConstStore>
@@ -523,12 +542,14 @@ interface GetConstProps {
   error: boolean;
   locale: string;
   localization: Localization;
-  helperText: string;
+  helperText: string | string[];
+  closeAnimation: boolean;
   handleApply: (value: any) => void;
   handleCancel: () => void;
   handleReset: () => void;
   handleFix: () => void;
-  setStateValue: Dispatch<SetStateAction<any>>;
+  handleSelector: (value: any) => void;
+  handleClose: () => void;
   onChange: (value: any) => void;
 }
 
@@ -547,12 +568,14 @@ interface UseGetConst {
   rangeMode: boolean;
   locale: string;
   errorMode: boolean;
-  helperText: string;
+  helperText: string | string[];
+  closeAnimation: boolean;
   handleApply: (value: any) => void;
   handleCancel: () => void;
   handleReset: () => void;
   handleFix: () => void;
-  setStateValue: Dispatch<SetStateAction<any>>;
+  handleSelector: (value: any) => void;
+  handleClose: () => void;
   onChange: (value: any) => void;
 }
 
@@ -568,12 +591,14 @@ const ConstStore: FC<GetConstProps> = ({
   locale,
   localization,
   helperText,
+  closeAnimation,
   handleApply,
   handleCancel,
   handleFix,
   handleReset,
   onChange,
-  setStateValue,
+  handleSelector,
+  handleClose,
   children,
 }) => {
   const dayOffset = () => {
@@ -611,11 +636,13 @@ const ConstStore: FC<GetConstProps> = ({
         locale,
         errorMode: error,
         helperText,
+        closeAnimation,
         handleApply,
         handleCancel,
         handleReset,
         handleFix,
-        setStateValue,
+        handleSelector,
+        handleClose,
         onChange,
       },
     },
@@ -637,6 +664,7 @@ interface DatePickerInputProps {
   inputProps?: InputProps;
   range?: boolean | "2-calendar";
   error: boolean;
+  themeColor?: string;
   onIconClick: () => void;
   onIconTouch: () => void;
   onSpaceDown: () => void;
@@ -650,6 +678,7 @@ const DatePickerInput: FC<DatePickerInputProps> = ({
   dateFormat,
   error,
   inputProps,
+  themeColor,
   onIconClick,
   onIconTouch,
   onSpaceDown,
@@ -670,13 +699,14 @@ const DatePickerInput: FC<DatePickerInputProps> = ({
         onSpaceDown={onSpaceDown}
         onChange={onChange}
         error={error}
+        returnType="date-string"
+        themeColor={themeColor}
         skipCheck
       />
       <DatePickerIcon onIconClick={onIconClick} onIconTouch={onIconTouch} />
     </div>
   );
 };
-
 interface DatePickerIconProps {
   calendarIcon?: RE;
   onIconClick: () => void;
@@ -707,7 +737,6 @@ interface DatePickerDropdownProps {
   range?: boolean | "2-calendar";
   openTo: Mode;
   dropdown: boolean;
-  setDropdown: Dispatch<SetStateAction<boolean>>;
   handleCancel: () => void;
 }
 const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
@@ -717,18 +746,12 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
   maxDate,
   openTo,
   dropdown,
-  setDropdown,
   handleCancel,
 }) => {
-  const { actionButton, onChange } = useGetConst();
-  const [isClose, setClose] = useState(false);
+  const { stateValue, actionButton, closeAnimation, onChange, handleClose } = useGetConst();
   const closeDropdown = useRef(() => {
+    handleClose();
     handleCancel();
-    setClose(true);
-    setTimeout(() => {
-      setDropdown(false);
-      setClose(false);
-    }, 100);
   }).current;
 
   function render() {
@@ -739,7 +762,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
           openTo={openTo}
           defaultMinDate={minDate}
           defaultMaxDate={maxDate}
-          isClose={isClose}
+          closeAnimation={closeAnimation}
           closeDropdown={closeDropdown}
           actionButton={actionButton}
           onChange={onChange}
@@ -748,11 +771,11 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
     } else {
       return (
         <Calendar
-          date={toDate(value)}
+          date={stateValue}
           minDate={minDate}
           maxDate={maxDate}
           openTo={openTo}
-          isClose={isClose}
+          closeAnimation={closeAnimation}
           closeDropdown={closeDropdown}
           actionButton={actionButton}
         />
@@ -779,7 +802,7 @@ interface CalendarRangeProps {
   defaultMinDate: Date | null;
   defaultMaxDate: Date | null;
   actionButton: boolean;
-  isClose: boolean;
+  closeAnimation: boolean;
   closeDropdown: () => void;
   onChange: (value: any) => void;
 }
@@ -789,14 +812,21 @@ const CalendarRange: FC<CalendarRangeProps> = ({
   openTo,
   defaultMinDate,
   defaultMaxDate,
-  isClose,
+  closeAnimation,
   closeDropdown,
   onChange,
 }) => {
-  const { stateValue, errorMode, helperText, setStateValue, handleApply, handleCancel } =
-    useGetConst();
+  const {
+    stateValue,
+    errorMode,
+    handleSelector,
+    handleApply,
+    handleCancel,
+    handleReset,
+    handleFix,
+  } = useGetConst();
   const [rangeMode, setRangeMode] = useState<"start" | "end">("start");
-  const { start, end } = stateValue as { start: Date | null; end: Date | null };
+  const { start, end } = stateValue;
 
   function init(date: Date | null, defaultDate: Date | null) {
     if (date) return date;
@@ -815,16 +845,12 @@ const CalendarRange: FC<CalendarRangeProps> = ({
     else return true;
   });
 
-  useEffect(() => {
-    console.log("DATE RANGE", start, end);
-  }, [end, start]);
-
   const handleStartSelectorClick = useCallback(
     (value: any, range: RangeType, type: Mode, index: string) => {
       if (type === "day") {
         if (value instanceof Date && !isEqualDate(value, end)) {
           const updateRange = { start: value, end: end };
-          setStateValue(updateRange);
+          handleSelector(updateRange);
           setMinDate(value);
           setBlock(false);
           if (start && end) setValidRange(true);
@@ -832,7 +858,7 @@ const CalendarRange: FC<CalendarRangeProps> = ({
         if (new DateX(value).compare(start) === "equal") setRangeMode("end");
       }
     },
-    [end, start, setStateValue],
+    [end, start, handleSelector],
   );
   const handleEndSelectorClick = useCallback(
     (value: any, range: RangeType, type: Mode, index: string) => {
@@ -840,30 +866,38 @@ const CalendarRange: FC<CalendarRangeProps> = ({
         case "day":
           if (value instanceof Date && !isEqualDate(value, end)) {
             const updateRange = { start: start, end: value };
-            setStateValue(updateRange);
+            handleSelector(updateRange);
             setMaxDate(value);
             if (start) setValidRange(true);
           }
           if (isEqualDate(value, end)) setRangeMode("start");
       }
     },
-    [end, start, setStateValue],
+    [end, start, handleSelector],
   );
   /* 
   ----- HANDLE FOOTER BUTTON() -----------------------------------
   */
-  const handleCancelButton = useCallback(() => {
+  const onCancel = useCallback(() => {
     handleCancel();
     closeDropdown();
   }, [closeDropdown, handleCancel]);
 
-  const handleApplyButton = useCallback(() => {
+  const onApply = useCallback(() => {
     if (!validRange) return;
     const value: any = { start, end };
     handleApply({ ...value });
     closeDropdown();
   }, [validRange, start, end, handleApply, closeDropdown]);
 
+  const onReset = useCallback(() => {
+    handleReset();
+    closeDropdown();
+  }, [closeDropdown, handleReset]);
+
+  const onFix = useCallback(() => {
+    handleFix();
+  }, [handleFix]);
   function setClassName() {
     let classname = "mod-calendar-wrap";
     if (range === "2-calendar") classname += " mod-double-calendar";
@@ -873,14 +907,14 @@ const CalendarRange: FC<CalendarRangeProps> = ({
   }
   function setCalendarRangeClass() {
     let classname = "mod-calendar-range mod-animation-fadein";
-    if (isClose) classname += " mod-animation-fadeout";
+    if (closeAnimation) classname += " mod-animation-fadeout";
     if (errorMode) classname += " mod-error-mode";
     return classname;
   }
   return (
     <div className={setCalendarRangeClass()}>
       {errorMode ? (
-        <div className="mod-error-text">{helperText}</div>
+        <CalendarError />
       ) : (
         <Fragment>
           {range === true ? (
@@ -900,7 +934,7 @@ const CalendarRange: FC<CalendarRangeProps> = ({
               minDate={defaultMinDate}
               maxDate={maxDate}
               openTo={openTo}
-              isClose={isClose}
+              closeAnimation={closeAnimation}
               closeDropdown={closeDropdown}
               handleSelectorClick={handleStartSelectorClick}
               rangeType="start"
@@ -912,7 +946,7 @@ const CalendarRange: FC<CalendarRangeProps> = ({
               minDate={minDate}
               maxDate={defaultMaxDate}
               openTo={openTo}
-              isClose={isClose}
+              closeAnimation={closeAnimation}
               closeDropdown={closeDropdown}
               handleSelectorClick={handleEndSelectorClick}
               rangeType="end"
@@ -927,8 +961,10 @@ const CalendarRange: FC<CalendarRangeProps> = ({
       <CalendarRangeFooter
         range={range}
         validRange={validRange}
-        handleCancelButton={handleCancelButton}
-        handleApplyButton={handleApplyButton}
+        handleCancel={onCancel}
+        handleApply={onApply}
+        handleReset={onReset}
+        handleFix={onFix}
       />
     </div>
   );
@@ -1057,20 +1093,22 @@ interface CalendarRangeFooterProps {
     back: string;
     fix: string;
   };
-  handleCancelButton: () => void;
-  handleApplyButton: () => void;
+  handleCancel: () => void;
+  handleApply: () => void;
+  handleReset: () => void;
+  handleFix: () => void;
 }
 const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
   validRange,
   range,
-  handleCancelButton,
-  handleApplyButton,
+  handleCancel,
+  handleApply,
+  handleReset,
+  handleFix,
 }) => {
   const {
     localization: { apply, cancel, fix },
     errorMode,
-    handleFix,
-    handleReset,
   } = useGetConst();
   function setClassName() {
     let classname = "mod-calendar-footer range";
@@ -1082,11 +1120,11 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
     <div className={setClassName()}>
       {!errorMode ? (
         <div className="mod-button-wrap">
-          <Button onClick={handleCancelButton} cssCustom="mat-button-base mod-hover">
+          <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
             {cancel}
           </Button>
           <Button
-            onClick={handleApplyButton}
+            onClick={handleApply}
             cssCustom="mat-button-base mod-primary"
             disabled={!validRange}>
             {apply}
@@ -1127,7 +1165,7 @@ interface CalendarProps {
   rangeType?: RangeType;
   rangeStart?: Date | null;
   rangeEnd?: Date | null;
-  isClose: boolean;
+  closeAnimation: boolean;
   block?: boolean;
   handleSelectorClick?: HandleSelectorClick;
   closeDropdown: () => void;
@@ -1140,7 +1178,7 @@ const Calendar: FC<CalendarProps> = ({
   rangeType,
   rangeStart,
   rangeEnd,
-  isClose,
+  closeAnimation,
   block,
   handleSelectorClick,
   closeDropdown,
@@ -1168,9 +1206,11 @@ const Calendar: FC<CalendarProps> = ({
       rangeEnd={rangeEnd}
       handleSelectorClick={handleSelectorClick}
       closeDropdown={closeDropdown}
-      isClose={isClose}
+      closeAnimation={closeAnimation}
       block={block}>
-      {!errorMode && (
+      {errorMode ? (
+        <CalendarError />
+      ) : (
         <Fragment>
           <CalendarHeader mode={mode} />
           <CalendarSeparator mode={mode} />
@@ -1279,8 +1319,8 @@ const CalendarArrow: FC = () => {
   }, [unsubscribe]);
   return (
     <div className="mod-calendar-arrow">
-      <MatArrow arrow="L" cssCustom="mod-hover" disabled={disableArrowL} onClick={onArrowLeft} />
-      <MatArrow arrow="R" cssCustom="mod-hover" disabled={disableArrowR} onClick={onArrowRight} />
+      <MatArrow arrow="L" cssCustom="mod-hover" disabled={false} onClick={onArrowLeft} />
+      <MatArrow arrow="R" cssCustom="mod-hover" disabled={false} onClick={onArrowRight} />
     </div>
   );
 };
@@ -1465,7 +1505,7 @@ const Selector: FC<SelectorProps> = memo(
 
     return (
       <div className={setClassName()} onClick={handleClick}>
-        {label}
+        <div className="mod-insert-label">{label}</div>
         <div className="mod-insert-border" />
         <div className="mod-insert-background" />
         {path && <div className={`mod-insert-path range-${rangeType}-path-${path}`} />}
@@ -1488,6 +1528,28 @@ const TodayPopup: FC = () => {
 
 const EmptySelector: FC = () => {
   return <div className="mod-date-selector blank" />;
+};
+
+/* 
+  ------------------------------------------------------------------------- 
+  ----- <CALENDAR ERROR CONTENT/>
+  ------------------------------------------------------------------------- 
+*/
+
+const CalendarError: FC = () => {
+  const { helperText } = useGetConst();
+  function render(text: string | string[]) {
+    if (Array.isArray(text)) {
+      return text.map((helper, index) => (
+        <span key={index + helper} className="mod-error-item">
+          {`- ${helper}`}
+        </span>
+      ));
+    } else {
+      return text;
+    }
+  }
+  return <div className="mod-content-error">{render(helperText)}</div>;
 };
 
 /* 
@@ -1549,7 +1611,7 @@ interface RenderDate {
   set(date: DateX): void;
   update(): void;
   discard(): void;
-  setYearMonth(year: number, month: number): DateX;
+  setYearMonth(year: number, month: number, minDate: Date | null, maxDate: Date | null): DateX;
   setDay(date: DateX): DateX;
   scrollYearGrid(scroll: "prev" | "next", type?: "override" | "update"): void;
   scrollYear(scroll: 1 | -1): DateX;
@@ -1575,7 +1637,7 @@ interface CalendarCoreProps {
   rangeType?: RangeType;
   rangeStart?: Date | null;
   rangeEnd?: Date | null;
-  isClose: boolean;
+  closeAnimation: boolean;
   block?: boolean;
   setMode: Dispatch<SetStateAction<Mode>>;
   closeDropdown: () => void;
@@ -1593,7 +1655,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   rangeType = "start",
   rangeStart = null,
   rangeEnd = null,
-  isClose,
+  closeAnimation,
   block = false,
   setMode,
   closeDropdown,
@@ -1634,8 +1696,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
       this.next = new DateX(this.curr);
       this.gridYearRange.discard();
     },
-    setYearMonth(year: number, month: number) {
-      const update = this.next.setYM(year, month);
+    setYearMonth(year, month, minDate, maxDate) {
+      const update = this.next.setYM(year, month, minDate, maxDate);
       this.next = update;
       this.update();
       return update;
@@ -1885,12 +1947,10 @@ const CalendarCore: FC<CalendarCoreProps> = ({
       switchRender();
     } else {
       let date = new DateX();
-      if (minDate && date.compareInRange(minDate, maxDate) === "out range") {
-        switch (date.compare(minDate)) {
-          case "equal":
-          case "less":
-            date = new DateX(minDate);
-        }
+      switch (minDate && date.compare(minDate)) {
+        case "equal":
+        case "less":
+          date = new DateX(minDate as Date);
       }
       contentData.init(date);
       switchRender();
@@ -1899,9 +1959,6 @@ const CalendarCore: FC<CalendarCoreProps> = ({
 
   useEffect(() => {
     init.current();
-    return () => {
-      console.log("destroyed");
-    };
   }, []);
   useEffect(() => {
     switchRender();
@@ -1960,21 +2017,21 @@ const CalendarCore: FC<CalendarCoreProps> = ({
 
   const selectYear = useCallback(
     (year: number, month: number, index: string) => {
-      contentData.setYearMonth(year, month);
+      contentData.setYearMonth(year, month, minDate, maxDate);
       if (monthButton) {
         renderDay();
       } else {
         renderMonth();
       }
     },
-    [monthButton, contentData, renderDay, renderMonth],
+    [contentData, minDate, maxDate, monthButton, renderDay, renderMonth],
   );
   const selectMonth = useCallback(
     (year: number, month: number, index: string) => {
-      contentData.setYearMonth(year, month);
+      contentData.setYearMonth(year, month, minDate, maxDate);
       renderDay();
     },
-    [contentData, renderDay],
+    [contentData, maxDate, minDate, renderDay],
   );
   const selectDay = useCallback(
     (value: Date, index: string) => {
@@ -2010,8 +2067,6 @@ const CalendarCore: FC<CalendarCoreProps> = ({
           }
           break;
       }
-
-      // ESTENDE LA FUNZIONE DA VERIFICARE!
     },
     [block, handleSelectorClick, mode, contentData.next, selectDay, selectMonth, selectYear],
   );
@@ -2051,10 +2106,10 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     let classname = "mod-calendar";
     if (block) classname += " mod-block-calendar";
     if (rangeMode) {
-      return classname;
+      return (classname += " mod-range-mode");
     } else {
       classname += " mod-animation-fadein";
-      if (isClose) classname += " mod-animation-fadeout";
+      if (closeAnimation) classname += " mod-animation-fadeout";
       return classname;
     }
   }

@@ -1,6 +1,5 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { DatePicker } from "../mod-design/core";
-import { useFakeForm } from "./useFakeForm";
 
 interface Props {
   name: string;
@@ -12,8 +11,8 @@ type RangeDate = {
 };
 const CtrlDatePickerRange: FC<Props> = ({ name }) => {
   const [dateRange, setDateRange] = useState<RangeDate>({
-    start: new Date(2030, 0, 31),
-    end: new Date(2029, 1, 20),
+    start: new Date(2022, 0, 12),
+    end: new Date(2025, 10, 20),
   });
 
   function toString(value: RangeDate) {
@@ -24,7 +23,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
   }
 
   function handleDateRange(value: RangeDate) {
-    console.log("CURRENT VALUE " + toString(value));
+    console.log("CURRENT VALUE", value);
     setDateRange(value);
   }
 
@@ -36,10 +35,10 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
       onChange={handleDateRange}
       openTo="day"
       minDate={new Date(2021, 0, 15)}
-      maxDate={new Date(2023, 9, 15)}
+      maxDate={new Date(2029, 9, 15)}
       option={{
         weekday: "narrow",
-        monthOption: { button: "long", calendar: "short" },
+        monthOption: { button: "long", calendar: "long" },
       }}
       helperText="sono un helper text"
       dateFormat="D/M/Y"
