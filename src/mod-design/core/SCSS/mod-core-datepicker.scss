@@ -81,6 +81,7 @@
   height: 20px;
   padding: 0 8px;
   border-bottom: 1px solid var(--hoverColor);
+  user-select: none !important;
   .mod-insert-day {
     width: 40px;
     height: 20px;

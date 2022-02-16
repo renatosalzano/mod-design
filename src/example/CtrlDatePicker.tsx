@@ -24,10 +24,12 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
       openTo="day"
       minDate={new Date(2024, 1, 8)}
       maxDate={new Date(2028, 0, 15)}
+      dateFormat="D/M/Y"
+      themeColor="mod-theme-dark"
       option={{
-        weekday: "short",
+        weekday: "narrow",
         headerButton: "2-button",
-        monthOption: { button: "long", calendar: "short" },
+        monthOption: { button: "short", calendar: "long" },
       }}
       localization={{
         locale: "LOL",
@@ -45,6 +47,7 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
       inputProps={{
         dateSeparator: "/",
         rangeSeparator: ">",
+        datePlaceholder: { dd: "gg", mm: "mm", yyyy: "aaaa" },
       }}
     />
   );

@@ -8,69 +8,83 @@ export interface CoreProps {
   disabled?: boolean;
   border?: boolean;
   cssCustom?: string;
+  /**
+   * Add CSS theme color class
+   * @example
+   * .myTheme {
+   *--fontColor: #color;
+   *--fontColorSecondary: #color;
+   *--idleColor: #color;
+   *--mainColor: #color;
+   *--successColor: #color;
+   *--warningColor: #color;
+   *--errorColor: #color;
+   *--hoverColor: #color;
+   *--disabledColor: #color;
+   *--backgroundColor: #color;
+   *}
+   */
   themeColor?: string;
   color?: "main" | "success" | "warning" | "error";
   inputIcon?: ReactElement;
   helperText?: string | string[];
 }
 
-const ModuleCore: FC<CoreProps> = memo(
-  ({
-    border = false,
-    color = "main",
-    themeColor = "mod-theme",
+const ModuleCore: FC<CoreProps> = ({
+  border = false,
+  color = "main",
+  themeColor = "mod-theme",
+  cssCustom,
+  focused = false,
+  disabled = false,
+  error = false,
+  helperText,
+  children,
+}) => {
+  function renderBorder(border: boolean) {
+    if (border) {
+      return <div className="mod-border">{children}</div>;
+    }
+    return children;
+  }
+
+  function setCoreClass({
     cssCustom,
+    color,
+    themeColor,
     focused = false,
     disabled = false,
     error = false,
-    helperText,
-    children,
-  }) => {
-    function renderBorder(border: boolean) {
-      if (border) {
-        return <div className="mod-border">{children}</div>;
-      }
-      return children;
-    }
+  }: Props) {
+    let className = "mod-core";
+    if (error) className += " mod-error";
+    if (cssCustom) className += ` ${cssCustom}`;
+    if (themeColor) className += ` ${themeColor}`;
+    if (color) className += ` mod-${color}`;
+    if (focused) className += " focus";
+    if (disabled) className += " disabled";
+    return className;
+  }
 
-    function setCoreClass({
-      cssCustom,
-      color,
-      themeColor,
-      focused = false,
-      disabled = false,
-      error = false,
-    }: Props) {
-      let className = "mod-core";
-      if (error) className += " mod-error";
-      if (cssCustom) className += ` ${cssCustom}`;
-      if (themeColor) className += ` ${themeColor}`;
-      if (color) className += ` mod-${color}`;
-      if (focused) className += " focus";
-      if (disabled) className += " disabled";
-      return className;
-    }
-
-    return (
-      <div
-        className={setCoreClass({
-          cssCustom: cssCustom,
-          color: color,
-          themeColor: themeColor,
-          focused: focused,
-          disabled: disabled,
-          error: error,
-        })}>
-        {renderBorder(border)}
-        {helperText && (
-          <HelperText color={color} focused={focused} disabled={disabled}>
-            {helperText}
-          </HelperText>
-        )}
-      </div>
-    );
-  },
-);
+  return (
+    <div
+      className={setCoreClass({
+        cssCustom: cssCustom,
+        color: color,
+        themeColor: themeColor,
+        focused: focused,
+        disabled: disabled,
+        error: error,
+      })}>
+      {renderBorder(border)}
+      {helperText && (
+        <HelperText color={color} focused={focused} disabled={disabled}>
+          {helperText}
+        </HelperText>
+      )}
+    </div>
+  );
+};
 export { ModuleCore };
 
 interface Props {

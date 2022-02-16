@@ -766,6 +766,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
           stateData.setDay(digit);
           break;
       }
+      this.value = "";
     },
     notDigit(value) {
       if (value === "" || /^\d+$/.test(value)) return false;
@@ -774,6 +775,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
     change(event) {
       const { value } = event.target;
       if (value === "" || /^\d+$/.test(value)) {
+        this.value = value;
         const digit = parseInt(value);
         switch (type) {
           case "Y":
@@ -910,6 +912,10 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
         }
         this.fristDigit = "";
         setFristDigit("");
+      } else {
+        if (type === "Y" && this.value === "0") {
+          this.update(1);
+        }
       }
     },
     cancel() {

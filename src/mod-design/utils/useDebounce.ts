@@ -19,10 +19,12 @@ export class ClickInRange {
   }
   clickInRange(ms: number) {
     if (this.timer) {
-      console.log("range");
+      /* in range */
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => this.reset(), ms);
       return true;
     } else {
+      /* out range */
       this.timer = setTimeout(() => this.reset(), ms);
       return false;
     }

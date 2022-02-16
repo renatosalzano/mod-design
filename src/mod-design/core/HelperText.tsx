@@ -6,15 +6,18 @@ interface Props {
   children: string | string[];
 }
 const HelperText: FC<Props> = ({ color = "main", focused = false, disabled = false, children }) => {
+  function capital(text: string) {
+    return text.replace(text[0], (_text) => _text.toUpperCase());
+  }
   function render(text: string | string[]) {
     if (Array.isArray(text)) {
       return text.map((helper, index) => (
         <span className="mod-text-item" key={index + helper}>
-          {helper}
+          {`- ${capital(helper)}`}
         </span>
       ));
     } else {
-      return text;
+      return capital(text);
     }
   }
   function setClassName() {

@@ -198,152 +198,144 @@ const DatePicker: FC<Props> = ({
     },
   }).current;
 
-  const check = useRef(() => {
-    let warning = "";
-    /* 
-      CHECK LANGUAGE
-    */
-    const [lang, warn] = testLocale(localization.locale);
-    if (warn) {
-      warning += `\n\tlocalization={ locale: ${warn} }`;
-    }
-    setLocale(lang);
-    /* 
-      CHECK MIN DATE IS LESS THAN MAX DATE
-    */
-    if (minDate && maxDate) {
-      if (new DateX(minDate).compare(maxDate) === "greater") {
-        warning += "\n\tminDate={ CANNOT BE GREATER THAN maxDate }";
-        setMinDate(null);
-      }
-    }
-
-    let minDateStr = minDate ? minDate.toLocaleDateString() : "";
-    let maxDateStr = maxDate ? maxDate.toLocaleDateString() : "";
-    if (range) {
-      /* 
-        CALENDAR RANGE CHECK 
-      */
-      let rangeWarning = "";
-
-      switch (checkIsRange(value)) {
-        case "is range":
-          const {
-            invalidRange,
-            startLessMinDate,
-            startGreaterMaxDate,
-            endLessMinDate,
-            endGreaterMaxDate,
-          } = checkRange(toRange(value), minDate, maxDate);
-          let startStr = "";
-          let endStr = "";
-          if (!(value instanceof Date) && value !== null) {
-            startStr = value.start ? value.start.toLocaleDateString() : "";
-            endStr = value.end ? value.end.toLocaleDateString() : "";
-          }
-
-          if (invalidRange) {
-            rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE GREATER OR EQUAL THAN end: ${endStr}`;
-          }
-          if (startLessMinDate && minDate) {
-            rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE LESS THAN minDate: ${minDateStr}`;
-          }
-          if (startGreaterMaxDate && maxDate) {
-            rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE GREATER THAN maxDate: ${maxDateStr}`;
-          }
-          if (endLessMinDate && minDate) {
-            rangeWarning += `\n\t\tend: ${endStr} CANNOT BE LESS THAN minDate: ${minDateStr}`;
-          }
-          if (endGreaterMaxDate) {
-            rangeWarning += `\n\t\tend: ${endStr} CANNOT BE GREATER THAN maxDate: ${maxDateStr}`;
-          }
-          break;
-        case "not range":
-          rangeWarning += info.value + "MUST BE { start: Date | null, end: Date | null } }";
-          break;
-      }
-      if (rangeWarning) {
-        /* 
-          RESET VALUE
-        */
-        warning += info.value + rangeWarning + " }";
-        onChange({ start: null, end: null } as any);
-        setStateValue({ start: null, end: null });
-      }
-    } else {
-      /* 
-        CALENDAR CHECK (NOT RANGE)
-      */
-      if (value instanceof Date) {
-        const date = new DateX(value);
-        let propsWarning = "";
-        let dateString = value.toLocaleDateString();
-        switch (date.compareInRange(minDate, maxDate)) {
-          case "less min":
-            propsWarning += `${dateString} CANNOT BE LESS THAN MIN DATE: ${minDateStr}`;
-            break;
-          case "greater max":
-            propsWarning += `${dateString} CANNOT BE GREATER THAN MAX DATE: ${maxDateStr}`;
-            break;
-        }
-        if (propsWarning) {
-          warning += info.value + propsWarning + " }";
-          setStateValue(null);
-          onChange(null as any);
-        }
-      }
-    }
-    /* 
-        HANDLE WARNING
-    */
-    if (warning) {
-      const tag = range ? info.rangeTag : info.tag;
-      const outputWarning = info.warn() + tag + warning + " />\n ";
-      console.warn(outputWarning);
-    } else {
-      /* OK */
-      setStateValue(value);
-    }
-    /* 
-        END CHECK
-    */
-    setChecked(true);
-  });
-
-  useEffect(() => {
-    check.current();
-  }, []);
-
   const data = useRef({
     inputName: name,
+    value: null as any,
     prevValue: null as any,
     inputValue: "" as any,
-    minDate: minDate,
-    maxDate: maxDate,
+    minDate,
+    maxDate,
     range: !!range,
     error: isError,
     locale: "",
     localDate: "null",
     localMinDate: "null",
     localMaxDate: "null",
+    check() {
+      let warning = "";
+      /* 
+        CHECK LANGUAGE
+      */
+      const [_locale, warn] = testLocale(localization.locale);
+      if (warn) {
+        warning += `\n\tlocalization={ locale: ${warn} }`;
+      }
+      setLocale(_locale);
+      this.locale = _locale;
+      /* 
+        CHECK MIN DATE IS LESS THAN MAX DATE
+      */
+      if (minDate && maxDate) {
+        if (new DateX(minDate).compare(maxDate) === "greater") {
+          warning += "\n\tminDate={ CANNOT BE GREATER THAN maxDate }";
+          setMinDate(null);
+          this.minDate = null;
+        }
+      }
+      if (this.minDate) {
+        this.localMinDate = this.minDate.toLocaleDateString(this.locale);
+      }
+      if (this.maxDate) {
+        this.localMaxDate = this.maxDate.toLocaleDateString(this.locale);
+      }
+      if (range) {
+        /* 
+          CALENDAR RANGE CHECK 
+        */
+        let rangeWarning = "";
+
+        switch (checkIsRange(value)) {
+          case "is range":
+            const {
+              invalidRange,
+              startLessMinDate,
+              startGreaterMaxDate,
+              endLessMinDate,
+              endGreaterMaxDate,
+            } = checkRange(toRange(value), minDate, maxDate);
+            let startStr = "";
+            let endStr = "";
+            if (!(value instanceof Date) && value !== null) {
+              startStr = value.start ? value.start.toLocaleDateString() : "";
+              endStr = value.end ? value.end.toLocaleDateString() : "";
+            }
+
+            if (invalidRange) {
+              rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE GREATER OR EQUAL THAN end: ${endStr}`;
+            }
+            if (startLessMinDate && minDate) {
+              rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE LESS THAN minDate: ${this.localMinDate}`;
+            }
+            if (startGreaterMaxDate && maxDate) {
+              rangeWarning += `\n\t\tstart: ${startStr} CANNOT BE GREATER THAN maxDate: ${this.localMaxDate}`;
+            }
+            if (endLessMinDate && minDate) {
+              rangeWarning += `\n\t\tend: ${endStr} CANNOT BE LESS THAN minDate: ${this.localMinDate}`;
+            }
+            if (endGreaterMaxDate) {
+              rangeWarning += `\n\t\tend: ${endStr} CANNOT BE GREATER THAN maxDate: ${this.localMaxDate}`;
+            }
+            break;
+          case "not range":
+            rangeWarning += info.value + "MUST BE { start: Date | null, end: Date | null } }";
+            break;
+        }
+        if (rangeWarning) {
+          /* 
+            RESET VALUE
+          */
+          warning += info.value + rangeWarning + " }";
+          this.resetChange();
+        }
+      } else {
+        /* 
+          CALENDAR CHECK (NOT RANGE)
+        */
+        if (value instanceof Date) {
+          const date = new DateX(value);
+          let propsWarning = "";
+          let dateString = value.toLocaleDateString();
+          switch (date.compareInRange(minDate, maxDate)) {
+            case "less min":
+              propsWarning += `${dateString} CANNOT BE LESS THAN MIN DATE: ${this.localMinDate}`;
+              break;
+            case "greater max":
+              propsWarning += `${dateString} CANNOT BE GREATER THAN MAX DATE: ${this.localMaxDate}`;
+              break;
+          }
+          if (propsWarning) {
+            warning += info.value + propsWarning + " }";
+            this.resetChange();
+          }
+        }
+      }
+      /* 
+          HANDLE WARNING
+      */
+      if (warning) {
+        const tag = range ? info.rangeTag : info.tag;
+        const outputWarning = info.warn() + tag + warning + " />\n ";
+        console.warn(outputWarning);
+      } else {
+        /* OK */
+        this.value = value;
+      }
+      /* 
+          END CHECK
+      */
+      setChecked(true);
+      this.init();
+    },
     init() {
-      this.prevValue = clone(value, this.range);
-      this.locale = locale;
-      this.minDate = checkedMinDate;
-      this.maxDate = maxDate;
-      if (minDate) {
-        this.localMinDate = minDate.toLocaleDateString(this.locale);
-      }
-      if (maxDate) {
-        this.localMaxDate = maxDate.toLocaleDateString(this.locale);
-      }
+      this.prevValue = clone(this.value, this.range);
+      setStateValue(this.value);
       this.log();
     },
     handleInputValue(value: any) {
+      const { startDate, endDate, mustBeLessThan, mustBeGreaterThan } = localization;
       this.inputValue = value;
       if (this.range) {
         const rangeDate = this.toRangeDate(value);
-        const { startDate, endDate, mustBeLessThan, mustBeGreaterThan } = localization;
         const {
           invalidRange,
           startLessMinDate,
@@ -372,6 +364,7 @@ const DatePicker: FC<Props> = ({
         }
         if (errorMessage.length > 0) {
           this.handleError(true, errorMessage);
+          this.value = { start: null, end: null };
           setStateValue(rangeDate);
           this.log();
         } else {
@@ -382,6 +375,22 @@ const DatePicker: FC<Props> = ({
         /* 
           CHECK INPUT VALUE
         */
+        const date = this.toDateX(value);
+        if (date instanceof DateX) {
+          switch (date.compareInRange(this.minDate, this.maxDate)) {
+            case "less min":
+              setStateValue(date);
+              this.handleError(true, `${mustBeGreaterThan} ${this.localMinDate}`);
+              break;
+            case "greater max":
+              setStateValue(date);
+              this.handleError(true, `${mustBeLessThan} ${this.localMaxDate}`);
+              break;
+            default:
+              this.handleError(false);
+              this.handleChange(date);
+          }
+        }
       }
     },
     toRangeDate(value: { start: string; end: string }) {
@@ -389,9 +398,25 @@ const DatePicker: FC<Props> = ({
       const end = value.end === "null" ? null : new Date(value.end);
       return { start, end };
     },
-    resetValue(): any {
+    toDateX(value: string) {
+      const date = value === "null" ? null : new DateX(value);
+      return date;
+    },
+    getNull(): any {
       if (this.range) return { start: null, end: null };
       else return null;
+    },
+    resetChange() {
+      if (this.range) {
+        this.value = { start: null, end: null };
+        this.onChange({ start: null, end: null });
+      } else {
+        this.value = null;
+        this.onChange(null);
+      }
+    },
+    onChange(value: any) {
+      onChange(value);
     },
     handleError(error: boolean, message?: string | string[]) {
       this.error = error;
@@ -413,7 +438,7 @@ const DatePicker: FC<Props> = ({
       this.handleClose(true);
     },
     handleReset() {
-      this.handleChange(this.resetValue());
+      this.handleChange(this.getNull());
     },
     handleChange(value: any) {
       setStateValue(value);
@@ -454,10 +479,8 @@ const DatePicker: FC<Props> = ({
   }
 
   useEffect(() => {
-    if (checked) {
-      data.init();
-    }
-  }, [checked, data]);
+    data.check();
+  }, [data]);
 
   function setClassName() {
     let classname = "mod-datepicker";
@@ -1355,7 +1378,7 @@ const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
     contentTransition.subscribe((i: 1 | -1) => {
       const direction = i === 1 ? "R" : "L";
       setTransition(direction);
-      if (test.clickInRange(200)) {
+      if (test.clickInRange(250)) {
         setTransition("idle");
       } else {
         setTimeout(() => setTransition("idle"), 150);

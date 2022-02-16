@@ -14,7 +14,7 @@ const Form = () => {
       {/* <CtrlInputChips /> */}
       <input type="date" />
       {/*       <TextInput name="test" value={value} onChange={onChange} /> */}
-
+      <span>WORK IN PROGRESS</span>
       <CtrlDatePicker name="date" />
       <CtrlDatePickerRange name="range" />
       {/* <CtrlDatePickerJS /> */}
