@@ -2152,6 +2152,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
 
   const selectYear = useCallback(
     (year: number, month: number, index: string) => {
+      const prev = contentData.curr.toStringIndex().year;
+      selectorData.toggleActive(mode, prev, index);
       contentData.setYearMonth(year, month, minDate, maxDate);
       if (monthButton) {
         renderDay();
@@ -2159,14 +2161,16 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         renderMonth();
       }
     },
-    [contentData, minDate, maxDate, monthButton, renderDay, renderMonth],
+    [contentData, selectorData, mode, minDate, maxDate, monthButton, renderDay, renderMonth],
   );
   const selectMonth = useCallback(
     (year: number, month: number, index: string) => {
+      const prev = contentData.curr.toStringIndex().month;
+      selectorData.toggleActive(mode, prev, index);
       contentData.setYearMonth(year, month, minDate, maxDate);
       renderDay();
     },
-    [contentData, maxDate, minDate, renderDay],
+    [contentData, maxDate, minDate, mode, renderDay, selectorData],
   );
   const selectDay = useCallback(
     (value: Date, index: string) => {

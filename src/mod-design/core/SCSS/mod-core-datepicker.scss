@@ -460,7 +460,8 @@
     left: 0px;
     right: 0px;
     border-radius: 20px;
-    border: 1px var(--selectorBorderType) var(--selectorBorderColor);
+    border: 1.5px var(--selectorBorderType) var(--selectorBorderColor);
+    opacity: 0.6;
     z-index: -1;
   }
   .mod-insert-background {
@@ -530,11 +531,6 @@
     --selectorBackgroundOpacity: 1;
   } */
 
-  &.mod-previous {
-    --selectorBorderType: solid;
-    --selectorBorderColor: var(--color);
-  }
-
   &.mod-disabled {
     color: var(--calendarFontColor);
     cursor: default;
@@ -550,6 +546,11 @@
     &:hover {
       --selectorPopupOpacity: 1;
     }
+  }
+
+  &.mod-previous {
+    --selectorBorderType: solid;
+    --selectorBorderColor: var(--color);
   }
 }
 
