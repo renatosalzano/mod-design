@@ -94,10 +94,13 @@
 }
 
 .mod-content-header {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
   height: 40px;
-  width: 100%;
+  width: 296px;
   margin-top: 8px;
   padding: 0 14px;
   font-size: 14px;
@@ -106,50 +109,123 @@
   color: var(--contentHeaderColor);
 }
 
+.mod-temp-wrapper {
+  width: 296px;
+  height: 248px;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
 .mod-calendar-content {
-  padding: 8px 8px 0 8px;
-  min-width: 296px;
-  display: grid;
-  grid-template-columns: auto auto auto auto;
+  position: relative;
+  width: 296px;
+  height: 248px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   font-family: var(--contentFont);
-  &.day-content {
-    grid-template-columns: auto auto auto auto auto auto auto;
-    grid-template-rows: 40px 40px 40px 40px 40px 40px;
+}
+
+.mod-transition-wrap {
+  display: grid;
+  grid-template-columns: auto auto;
+  height: 248px;
+  --ms: 150ms;
+  &.mod-translate-L {
+    animation: translateL var(--ms) ease-out forwards;
   }
-  &.month-content {
-    padding: 0px 8px;
+  &.mod-translate-R {
+    animation: translateR var(--ms) ease-out forwards;
   }
-  &.month-long {
-    grid-template-columns: auto auto auto;
+  &.mod-translate-U {
+    display: flex;
+    flex-direction: column;
+    animation: translateU var(--ms) ease-out forwards;
+  }
+  &.mod-translate-D {
+    display: flex;
+    flex-direction: column;
+    animation: translateD var(--ms) ease-out forwards;
   }
 }
 
-.content-transition-wrap {
+.mod-month-content,
+.mod-month-long-content {
+  padding: 48px 8px 8px 8px;
+}
+
+.mod-year-content {
   display: grid;
-  grid-template-columns: auto auto;
-  &.mod-translate-L {
-    animation: translateL 150ms ease-out forwards;
-  }
-  &.mod-translate-R {
-    animation: translateR 150ms ease-out forwards;
-  }
+  grid-template-columns: auto auto auto auto;
+  grid-template-rows: 40px 40px 40px 40px 40px 40px;
+  padding: 8px 8px 0 8px;
+  width: 296px;
+  height: 248px;
+}
+.mod-month-content {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  grid-template-rows: 40px 40px 40px 40px 40px;
+  width: 296px;
+  height: 248px;
+}
+.mod-month-long-content {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-rows: 40px 40px 40px 40px 40px;
+  width: 296px;
+  height: 248px;
+}
+.mod-day-content {
+  display: grid;
+  grid-template-columns: auto auto auto auto auto auto auto;
+  grid-template-rows: 40px 40px 40px 40px 40px 40px;
+  padding: 8px 8px 0 8px;
+  width: 296px;
+  height: 248px;
 }
 
 @keyframes translateL {
   0% {
+    pointer-events: none;
     transform: translate3D(-100%, 0, 0);
   }
   100% {
+    pointer-events: all;
     transform: translate3D(0%, 0, 0);
   }
 }
 
 @keyframes translateR {
   0% {
+    pointer-events: none;
     transform: translate3D(0%, 0, 0);
   }
   100% {
+    pointer-events: all;
     transform: translate3D(-100%, 0, 0);
+  }
+}
+
+@keyframes translateD {
+  0% {
+    pointer-events: none;
+    transform: translate3D(0, -100%, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(0, 0%, 0);
+  }
+}
+
+@keyframes translateU {
+  0% {
+    pointer-events: none;
+    transform: translate3D(0, 0%, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(0, -100%, 0);
   }
 }
 

@@ -51,6 +51,7 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
         rangeSeparator: ">",
         datePlaceholder: { dd: "gg", mm: "mm", yyyy: "aaaa" },
       }}
+      disableAnimation
     />
   );
 };

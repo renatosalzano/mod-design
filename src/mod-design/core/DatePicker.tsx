@@ -4,14 +4,15 @@ import {
   Dispatch,
   FC,
   Fragment,
+  JSXElementConstructor,
   memo,
   MutableRefObject,
   ReactElement,
+  ReactNode,
   SetStateAction,
   useCallback,
   useContext,
   useEffect,
-  useReducer,
   useRef,
   useState,
 } from "react";
@@ -22,7 +23,7 @@ import { ArrowIcon, CalendarIcon } from "../icons";
 import "./SCSS/mod-core-datepicker.scss";
 import { useScrollBlock } from "../utils/blockScroll";
 import { checkRange, checkIsRange, toRange } from "../utils/DateRange";
-import { DateX, toDate, isEqualDate, testLocale } from "../utils/DateX";
+import { DateX, isEqualDate, testLocale } from "../utils/DateX";
 import { usePrevious } from "../utils/usePrevious";
 import { ClickInRange } from "../utils/useDebounce";
 
@@ -112,6 +113,7 @@ interface Props extends CoreProps {
   option?: Option;
   actionButton?: boolean;
   inputProps?: InputProps;
+  disableAnimation?: boolean;
   onChange:
     | ((value: Date | null) => void)
     | ((value: { start: Date | null; end: Date | null }) => void);
@@ -151,6 +153,7 @@ const DatePicker: FC<Props> = ({
   helperText,
   themeColor,
   color,
+  disableAnimation,
   onChange,
 }) => {
   /* 
@@ -441,8 +444,12 @@ const DatePicker: FC<Props> = ({
       setStateValue(this.prevValue);
     },
     handleFix() {
-      this.handleChange(clone(this.prevValue, this.range));
       this.handleClose(true);
+      this.handleChange(clone(this.prevValue, this.range));
+
+      setTimeout(() => {
+        setDropdown(true);
+      }, 150);
     },
     handleReset() {
       this.handleChange(this.getNull());
@@ -526,6 +533,7 @@ const DatePicker: FC<Props> = ({
           option={option}
           helperText={helperTextCore}
           closeAnimation={close}
+          disableAnimation={disableAnimation}
           handleApply={handleApply}
           handleCancel={handleCancel}
           handleReset={handleReset}
@@ -575,6 +583,7 @@ interface GetConstProps {
   localization: Localization;
   helperText: string | string[];
   closeAnimation: boolean;
+  disableAnimation?: boolean;
   handleApply: (value: any) => void;
   handleCancel: () => void;
   handleReset: () => void;
@@ -601,6 +610,7 @@ interface UseGetConst {
   errorMode: boolean;
   helperText: string | string[];
   closeAnimation: boolean;
+  disableAnimation?: boolean;
   handleApply: (value: any) => void;
   handleCancel: () => void;
   handleReset: () => void;
@@ -623,6 +633,7 @@ const ConstStore: FC<GetConstProps> = ({
   localization,
   helperText,
   closeAnimation,
+  disableAnimation,
   handleApply,
   handleCancel,
   handleFix,
@@ -668,6 +679,7 @@ const ConstStore: FC<GetConstProps> = ({
         errorMode: error,
         helperText,
         closeAnimation,
+        disableAnimation,
         handleApply,
         handleCancel,
         handleReset,
@@ -1374,11 +1386,11 @@ const CalendarSeparator: FC<CalendarContentProps> = ({ mode }) => {
   return <div className="mod-calendar-separator">{render()}</div>;
 };
 const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
-  const { monthOption } = useGetConst();
+  const { monthOption, disableAnimation } = useGetConst();
   const { setContent, setHeaderContent, contentTransition } = useCalendarCore();
   const [header, setRenderHeader] = useState<string>("");
   const [content, setRenderContent] = useState<RE[]>([]);
-  const [transition, setTransition] = useState<"L" | "R" | "idle">("idle");
+  const [transition, setTransition] = useState<"L" | "R" | "U" | "D" | "idle">("idle");
   const prevContent = usePrevious(content);
   const test = useRef(new ClickInRange()).current;
 
@@ -1387,8 +1399,8 @@ const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
       setRenderContent(_content);
     };
     setHeaderContent.current = (header: string) => setRenderHeader(header);
-    contentTransition.subscribe((i: 1 | -1) => {
-      const direction = i === 1 ? "R" : "L";
+    contentTransition.subscribe((direction) => {
+      if (disableAnimation) return;
       setTransition(direction);
       if (test.clickInRange(250)) {
         setTransition("idle");
@@ -1412,33 +1424,43 @@ const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
   /* STYLE FUNCTION */
   function setClassName() {
     const longMonth = mode === "month" && monthOption === "long";
-    let className = "mod-calendar-content";
-    if (mode === "day") className += " day-content";
-    if (mode === "month") className += " month-content";
-    if (longMonth) className += " month-long";
+    let className = "";
+    if (mode === "day") className = "mod-day-content";
+    if (mode === "month") className = "mod-month-content";
+    if (mode === "year") className = "mod-year-content";
+    if (longMonth) className = "mod-month-long-content";
     return className;
-  }
-  function setTransitionClass() {
-    let classname = "content-transition-wrap";
-    if (transition) classname += ` mod-translate-${transition}`;
-    return classname;
   }
 
   function renderContent() {
     switch (transition) {
       case "L":
         return (
-          <>
+          <div className="mod-transition-wrap mod-translate-L">
             <div className={setClassName()}>{content}</div>
             <div className={setClassName()}>{prevContent}</div>
-          </>
+          </div>
         );
       case "R":
         return (
-          <>
+          <div className="mod-transition-wrap mod-translate-R">
             <div className={setClassName()}>{prevContent}</div>
             <div className={setClassName()}>{content}</div>
-          </>
+          </div>
+        );
+      case "D":
+        return (
+          <div className="mod-transition-wrap mod-translate-D">
+            <div className={setClassName()}>{content}</div>
+            {contentTransition.getPrev()}
+          </div>
+        );
+      case "U":
+        return (
+          <div className="mod-transition-wrap mod-translate-U">
+            {contentTransition.getPrev()}
+            <div className={setClassName()}>{content}</div>
+          </div>
         );
       default:
         return (
@@ -1450,10 +1472,10 @@ const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
   }
 
   return (
-    <Fragment>
+    <div className="mod-calendar-content">
       {mode === "month" && <div className="mod-content-header">{header}</div>}
-      <div className={setTransitionClass()}>{renderContent()}</div>
-    </Fragment>
+      {renderContent()}
+    </div>
   );
 };
 /* 
@@ -1471,7 +1493,7 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
     handleFix,
     handleReset,
   } = useGetConst();
-  const { handleCancel, handleApply } = useCalendarCore();
+  const { coreHandleCancel, coreHandleApply } = useCalendarCore();
 
   return (
     <Fragment>
@@ -1488,10 +1510,10 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
             </div>
           ) : (
             <div className="mod-button-wrap">
-              <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
+              <Button onClick={coreHandleCancel} cssCustom="mat-button-base mod-hover">
                 {cancel}
               </Button>
-              <Button onClick={handleApply} cssCustom="mat-button-base mod-primary">
+              <Button onClick={coreHandleApply} cssCustom="mat-button-base mod-primary">
                 {apply}
               </Button>
             </div>
@@ -1675,6 +1697,16 @@ interface GridYearRange {
   updateGrid(scroll: "prev" | "next", type?: "override" | "update"): void;
 }
 
+interface ContentTransition {
+  prevContent: { year: RE[]; month: RE[]; day: RE[] };
+  content: ReactNode;
+  getPrev(): ReactNode;
+  setPrev(type: Mode): void;
+  setDirection(direction: "L" | "R" | "U" | "D"): void;
+  subscribe(callback: (direction: "L" | "R" | "U" | "D") => void): void;
+  unsubscribe(): void;
+}
+
 interface CalendarCoreProps {
   range?: boolean | "2-calendar";
   value: Date | null;
@@ -1710,8 +1742,19 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   children,
 }) => {
   /* ----- RENDER DATA ---------------------------------------------------- */
-  const { monthsLabel, monthsButton, dayOffset, actionButton, monthButton, rangeMode, onChange } =
-    useGetConst();
+  const {
+    monthsLabel,
+    monthsButton,
+    monthOption,
+    dayOffset,
+    actionButton,
+    monthButton,
+    rangeMode,
+    onChange,
+    handleCancel,
+    handleApply,
+    handleClose,
+  } = useGetConst();
 
   /* ----- SETTERS -------------------------------------------------------- */
   const setContent = useRef<SetContent>((_content: RE[]) => null);
@@ -1834,15 +1877,11 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         this.prev[rangeType] = dateX.toStringIndex();
       }
       this.today = new DateX().toStringIndex();
-      console.table(this);
     },
     initActive(type, index) {
       return this[this.rangeType][type] === index;
     },
     isToday(type, index) {
-      if (type === "month") {
-        console.log(this.today[type], index);
-      }
       return this.today[type] === index;
     },
     isPrevious(type, index) {
@@ -1872,14 +1911,25 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     start: { year: "", month: "", day: "" },
     end: { year: "", month: "", day: "" },
   }).current;
-  const contentTransition = useRef({
-    prevContent: [] as RE[],
-    setDirection(i: 1 | -1) {},
-    subscribe(callback: (i: 1 | -1) => void) {
+  const contentTransition = useRef<ContentTransition>({
+    prevContent: { year: [], month: [], day: [] },
+    content: null,
+    getPrev() {
+      return this.content;
+    },
+    setPrev(type) {
+      const longMonth = type === "month" && monthOption === "long";
+      const contentType = longMonth ? "month-long" : type;
+      this.content = (
+        <div className={`mod-${contentType}-content`}>{[...this.prevContent[type]]}</div>
+      );
+    },
+    setDirection(direction) {},
+    subscribe(callback: (direction: "L" | "R" | "U" | "D") => void) {
       this.setDirection = callback;
     },
     unsubscribe() {
-      this.setDirection = (i: 1 | -1) => {};
+      this.setDirection = (_direction) => {};
     },
   }).current;
 
@@ -1918,17 +1968,20 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     items.forEach((item) => {
       content.push(<Selector {...item} />);
     });
+    contentTransition.prevContent.year = content;
     renderContent("year", content, yearRangeString, false, false);
   }, [
-    maxDate,
-    minDate,
-    rangeEnd,
-    rangeStart,
-    rangeType,
-    renderContent,
     contentData.gridYearRange.next,
     contentData.next,
+    minDate,
+    maxDate,
+    rangeStart,
+    rangeEnd,
+    rangeType,
+    contentTransition.prevContent,
+    renderContent,
   ]);
+
   const renderMonth = useCallback(() => {
     const { next } = contentData;
     const content: RE[] = [];
@@ -1941,9 +1994,20 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     items.forEach((item) => {
       content.push(<Selector {...item} />);
     });
-
+    contentTransition.prevContent.month = content;
     renderContent("month", content, yearString, arrowL, arrowR, yearString);
-  }, [maxDate, minDate, monthsLabel, rangeEnd, rangeStart, rangeType, renderContent, contentData]);
+  }, [
+    contentData,
+    monthsLabel,
+    minDate,
+    maxDate,
+    rangeStart,
+    rangeEnd,
+    rangeType,
+    contentTransition.prevContent,
+    renderContent,
+  ]);
+
   const renderDay = useCallback(() => {
     const { curr } = contentData;
     const content: RE[] = [];
@@ -1960,17 +2024,19 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         content.push(<Selector {...item} />);
       }
     });
+    contentTransition.prevContent.day = content;
     renderContent("day", content, `${monthsButton[month]} ${year}`, true, true);
   }, [
-    dayOffset,
-    maxDate,
-    minDate,
-    monthsButton,
-    rangeEnd,
-    rangeStart,
-    rangeType,
-    renderContent,
     contentData,
+    dayOffset,
+    minDate,
+    maxDate,
+    rangeStart,
+    rangeEnd,
+    rangeType,
+    contentTransition,
+    renderContent,
+    monthsButton,
   ]);
   const switchRender = useCallback(() => {
     switch (mode) {
@@ -2022,25 +2088,43 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   */
 
   const onSwitchButtonClick = useCallback(() => {
-    if (mode !== "day") {
-      contentData.discard();
-      renderDay();
-    } else {
-      renderYear();
+    switch (mode) {
+      case "year":
+        contentTransition.setPrev("year");
+        contentTransition.setDirection("U");
+        contentData.discard();
+        renderDay();
+        break;
+      case "month":
+        contentTransition.setPrev("month");
+        contentTransition.setDirection("U");
+        contentData.discard();
+        renderDay();
+        break;
+      case "day":
+        contentTransition.setPrev("day");
+        contentTransition.setDirection("D");
+        renderYear();
+        break;
     }
-  }, [mode, contentData, renderDay, renderYear]);
+  }, [mode, contentTransition, contentData, renderDay, renderYear]);
 
   const onMonthButtonClick = useCallback(() => {
+    contentTransition.setPrev("day");
+    contentTransition.setDirection("D");
     renderMonth();
-  }, [renderMonth]);
+  }, [contentTransition, renderMonth]);
 
   const onYearButtonClick = useCallback(() => {
+    contentTransition.setPrev("day");
+    contentTransition.setDirection("D");
     renderYear();
-  }, [renderYear]);
+  }, [contentTransition, renderYear]);
 
   const onArrowClick = useCallback(
     (scroll: -1 | 1) => {
-      contentTransition.setDirection(scroll);
+      const direction = scroll === 1 ? "R" : "L";
+      contentTransition.setDirection(direction);
       switch (mode) {
         case "year":
           const yearScroll = scroll === 1 ? "next" : "prev";
@@ -2126,14 +2210,15 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   ------------------------------------------------------------------------- 
   */
 
-  const handleCancel = useCallback(() => {
+  const coreHandleCancel = useCallback(() => {
     if (mode === "day") {
-      closeDropdown();
+      handleClose();
+      handleCancel();
     } else {
       /* setDay(); */
     }
-  }, [mode, closeDropdown]);
-  const handleApply = useCallback(() => {
+  }, [mode, handleCancel, handleClose]);
+  const coreHandleApply = useCallback(() => {
     switch (mode) {
       case "year":
         if (monthButton) {
@@ -2146,10 +2231,11 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         /* setDay(); */
         break;
       case "day":
-        //ON CHANGE
+        handleApply(new Date(contentData.curr));
+        handleClose();
         break;
     }
-  }, [mode, monthButton]);
+  }, [contentData.curr, handleApply, handleClose, mode, monthButton]);
 
   function setClassName() {
     let classname = "mod-calendar";
@@ -2182,8 +2268,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
             onYearButtonClick,
             onArrowClick,
             coreHandleSelector,
-            handleCancel,
-            handleApply,
+            coreHandleCancel,
+            coreHandleApply,
           },
         },
         children,
@@ -2200,18 +2286,13 @@ interface CalendarStore {
   selectorData: SelectorData;
   prevSelector: PrevSelector;
   rangeType: RangeType;
-  contentTransition: {
-    prevContent: RE[];
-    setDirection(direction: 1 | -1): void;
-    subscribe(callback: (i: 1 | -1) => void): void;
-    unsubscribe(): void;
-  };
+  contentTransition: ContentTransition;
   onSwitchButtonClick: () => void;
   onMonthButtonClick: () => void;
   onYearButtonClick: () => void;
   onArrowClick: (scroll: 1 | -1) => void;
-  handleCancel: () => void;
-  handleApply: () => void;
+  coreHandleCancel: () => void;
+  coreHandleApply: () => void;
   coreHandleSelector: (
     value: number | Date,
     rangeType: "start" | "end",
