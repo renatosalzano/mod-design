@@ -41,9 +41,11 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
         apply: "Conferma",
         cancel: "Annulla",
         fix: "Aggiusta",
+        reset: "Reset",
         mustBeLessThan: "deve essere minore di",
         mustBeGreaterThan: "deve essere maggiore di",
       }}
+      actionButton
       inputProps={{
         dateSeparator: "/",
         rangeSeparator: ">",

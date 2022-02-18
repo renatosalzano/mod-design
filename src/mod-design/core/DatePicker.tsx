@@ -46,6 +46,7 @@ interface Localization {
   apply: string;
   cancel: string;
   fix: string;
+  reset: string;
   today: string;
   mustBeLessThan: string;
   mustBeGreaterThan: string;
@@ -90,6 +91,7 @@ interface Props extends CoreProps {
    * today: "oggi",
    * apply: "Conferma",
    * cancel: "Annulla",
+   * reset: "Reset"
    * fix: "Aggiusta",
    * mustBeLessThan: "deve essere minore di",
    * mustBeGreaterThan: "deve essere maggiore di",
@@ -138,6 +140,7 @@ const DatePicker: FC<Props> = ({
     apply: "apply",
     cancel: "cancel",
     fix: "fix",
+    reset: "reset",
     today: "today",
     mustBeLessThan: "must be less than",
     mustBeGreaterThan: "must be greater than",
@@ -147,6 +150,7 @@ const DatePicker: FC<Props> = ({
   error,
   helperText,
   themeColor,
+  color,
   onChange,
 }) => {
   /* 
@@ -165,7 +169,7 @@ const DatePicker: FC<Props> = ({
   ------------------------------------------------------------------------- 
   */
 
-  const { isFocus, isError, isDisabled, helperTextCore, setError, clearError } = useModuleCore({
+  const { isFocus, isError, isDisabled, helperTextCore, setHelperText } = useModuleCore({
     focused: focused || dropdown,
     disabled: disabled,
     error: error,
@@ -181,6 +185,7 @@ const DatePicker: FC<Props> = ({
   const [checked, setChecked] = useState(false);
   const [locale, setLocale] = useState("");
   const [checkedMinDate, setMinDate] = useState<Date | null>(minDate);
+  const [internalError, setInternalError] = useState(false);
 
   const info = useRef({
     tag: "<DatePicker ",
@@ -206,7 +211,7 @@ const DatePicker: FC<Props> = ({
     minDate,
     maxDate,
     range: !!range,
-    error: isError,
+    error: internalError,
     locale: "",
     localDate: "null",
     localMinDate: "null",
@@ -421,9 +426,11 @@ const DatePicker: FC<Props> = ({
     handleError(error: boolean, message?: string | string[]) {
       this.error = error;
       if (error) {
-        setError(message);
+        setInternalError(true);
+        setHelperText(message);
       } else {
-        clearError();
+        setInternalError(false);
+        setHelperText();
       }
     },
     handleApply(value: any) {
@@ -439,6 +446,7 @@ const DatePicker: FC<Props> = ({
     },
     handleReset() {
       this.handleChange(this.getNull());
+      this.handleClose(true);
     },
     handleChange(value: any) {
       setStateValue(value);
@@ -448,7 +456,6 @@ const DatePicker: FC<Props> = ({
     },
     handleSelector(value: any) {
       setStateValue(value);
-      console.log(value);
     },
     handleClose(clearError?: boolean) {
       setClose(true);
@@ -503,12 +510,13 @@ const DatePicker: FC<Props> = ({
       themeColor={themeColor}
       focused={isFocus}
       error={isError}
+      color={internalError ? "error" : color}
       disabled={isDisabled}
       helperText={helperTextCore}
       border>
       {checked && locale && (
         <ConstStore
-          error={isError}
+          error={internalError}
           range={range}
           value={stateValue}
           stateValue={stateValue}
@@ -538,7 +546,7 @@ const DatePicker: FC<Props> = ({
             onIconTouch={() => null}
             onSpaceDown={() => setDropdown(true)}
             onChange={handleInputValue}
-            error={isError}
+            error={isError || internalError}
           />
           <DatePickerDropdown
             range={range}
@@ -771,11 +779,24 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
   dropdown,
   handleCancel,
 }) => {
-  const { stateValue, actionButton, closeAnimation, onChange, handleClose } = useGetConst();
+  const {
+    errorMode,
+    stateValue,
+    actionButton,
+    closeAnimation,
+    onChange,
+    handleClose,
+    handleSelector,
+  } = useGetConst();
   const closeDropdown = useRef(() => {
     handleClose();
     handleCancel();
   }).current;
+
+  function handleTrigger() {
+    handleClose();
+    !errorMode && handleCancel();
+  }
 
   function render() {
     if (range) {
@@ -800,6 +821,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
           openTo={openTo}
           closeAnimation={closeAnimation}
           closeDropdown={closeDropdown}
+          handleSelector={handleSelector}
           actionButton={actionButton}
         />
       );
@@ -808,7 +830,7 @@ const DatePickerDropdown: FC<DatePickerDropdownProps> = ({
   return (
     <div className="mod-dropdown-container">
       {dropdown && render()}
-      {dropdown && <div className="mod-trigger" onClick={closeDropdown} />}
+      {dropdown && <div className="mod-trigger" onClick={handleTrigger} />}
     </div>
   );
 };
@@ -868,33 +890,28 @@ const CalendarRange: FC<CalendarRangeProps> = ({
     else return true;
   });
 
-  const handleStartSelectorClick = useCallback(
-    (value: any, range: RangeType, type: Mode, index: string) => {
-      if (type === "day") {
-        if (value instanceof Date && !isEqualDate(value, end)) {
-          const updateRange = { start: value, end: end };
-          handleSelector(updateRange);
-          setMinDate(value);
-          setBlock(false);
-          if (start && end) setValidRange(true);
-        }
-        if (new DateX(value).compare(start) === "equal") setRangeMode("end");
+  const handleStartSelector = useCallback(
+    (value: any) => {
+      if (value instanceof Date && !isEqualDate(value, end)) {
+        const updateRange = { start: value, end: end };
+        handleSelector(updateRange);
+        setMinDate(value);
+        setBlock(false);
+        if (start && end) setValidRange(true);
       }
+      if (new DateX(value).compare(start) === "equal") setRangeMode("end");
     },
     [end, start, handleSelector],
   );
-  const handleEndSelectorClick = useCallback(
-    (value: any, range: RangeType, type: Mode, index: string) => {
-      switch (type) {
-        case "day":
-          if (value instanceof Date && !isEqualDate(value, end)) {
-            const updateRange = { start: start, end: value };
-            handleSelector(updateRange);
-            setMaxDate(value);
-            if (start) setValidRange(true);
-          }
-          if (isEqualDate(value, end)) setRangeMode("start");
+  const handleEndSelector = useCallback(
+    (value: any) => {
+      if (value instanceof Date && !isEqualDate(value, end)) {
+        const updateRange = { start: start, end: value };
+        handleSelector(updateRange);
+        setMaxDate(value);
+        if (start) setValidRange(true);
       }
+      if (isEqualDate(value, end)) setRangeMode("start");
     },
     [end, start, handleSelector],
   );
@@ -959,7 +976,7 @@ const CalendarRange: FC<CalendarRangeProps> = ({
               openTo={openTo}
               closeAnimation={closeAnimation}
               closeDropdown={closeDropdown}
-              handleSelectorClick={handleStartSelectorClick}
+              handleSelector={handleStartSelector}
               rangeType="start"
               rangeStart={start}
               rangeEnd={end}
@@ -971,7 +988,7 @@ const CalendarRange: FC<CalendarRangeProps> = ({
               openTo={openTo}
               closeAnimation={closeAnimation}
               closeDropdown={closeDropdown}
-              handleSelectorClick={handleEndSelectorClick}
+              handleSelector={handleEndSelector}
               rangeType="end"
               rangeStart={start}
               rangeEnd={end}
@@ -1172,12 +1189,7 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
   ----- <CALENDAR />
   ------------------------------------------------------------------------- 
 */
-type HandleSelectorClick = (
-  value: Date | number,
-  range: RangeType,
-  type: Mode,
-  index: string,
-) => void;
+
 interface CalendarProps {
   date: Date | null;
   minDate: Date | null;
@@ -1190,7 +1202,7 @@ interface CalendarProps {
   rangeEnd?: Date | null;
   closeAnimation: boolean;
   block?: boolean;
-  handleSelectorClick?: HandleSelectorClick;
+  handleSelector: HandleSelector;
   closeDropdown: () => void;
 }
 const Calendar: FC<CalendarProps> = ({
@@ -1203,7 +1215,7 @@ const Calendar: FC<CalendarProps> = ({
   rangeEnd,
   closeAnimation,
   block,
-  handleSelectorClick,
+  handleSelector,
   closeDropdown,
 }) => {
   const { allowScroll, blockScroll } = useScrollBlock();
@@ -1227,7 +1239,7 @@ const Calendar: FC<CalendarProps> = ({
       rangeType={rangeType}
       rangeStart={rangeStart}
       rangeEnd={rangeEnd}
-      handleSelectorClick={handleSelectorClick}
+      handleSelector={handleSelector}
       closeDropdown={closeDropdown}
       closeAnimation={closeAnimation}
       block={block}>
@@ -1240,7 +1252,7 @@ const Calendar: FC<CalendarProps> = ({
           <CalendarContent mode={mode} />
         </Fragment>
       )}
-      <CalendarFooter actionButton={actionButton} />
+      <CalendarFooter actionButton={actionButton || errorMode} />
     </CalendarCore>
   );
 };
@@ -1254,14 +1266,14 @@ interface CalendarContentProps {
   mode: Mode;
 }
 
-const CalendarHeader: FC<CalendarContentProps> = ({ mode }) => {
+const CalendarHeader: FC<CalendarContentProps> = memo(({ mode }) => {
   return (
     <div className="mod-calendar-header">
       <CalendarModeButton mode={mode} />
       <CalendarArrow />
     </div>
   );
-};
+});
 
 const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
   const { monthButton } = useGetConst();
@@ -1316,8 +1328,8 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
 
 const CalendarArrow: FC = () => {
   const { onArrowClick, setDisableArrow } = useCalendarCore();
-  const [disableArrowL, setDisableL] = useState(false);
-  const [disableArrowR, setDisableR] = useState(false);
+  const [, setDisableL] = useState(false);
+  const [, setDisableR] = useState(false);
 
   const onArrowLeft = () => {
     onArrowClick(-1);
@@ -1454,7 +1466,10 @@ interface CalendarFooterProps {
 }
 const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
   const {
-    localization: { cancel, apply },
+    errorMode,
+    localization: { cancel, apply, fix, reset },
+    handleFix,
+    handleReset,
   } = useGetConst();
   const { handleCancel, handleApply } = useCalendarCore();
 
@@ -1462,14 +1477,25 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
     <Fragment>
       {actionButton && (
         <div className="mod-calendar-footer">
-          <div className="mod-button-wrap">
-            <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
-              {cancel}
-            </Button>
-            <Button onClick={handleApply} cssCustom="mat-button-base mod-primary">
-              {apply}
-            </Button>
-          </div>
+          {errorMode ? (
+            <div className="mod-button-wrap">
+              <Button onClick={handleReset} cssCustom="mat-button-base mod-hover">
+                {reset}
+              </Button>
+              <Button onClick={handleFix} cssCustom="mat-button-base mod-primary">
+                {fix}
+              </Button>
+            </div>
+          ) : (
+            <div className="mod-button-wrap">
+              <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
+                {cancel}
+              </Button>
+              <Button onClick={handleApply} cssCustom="mat-button-base mod-primary">
+                {apply}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Fragment>
@@ -1492,13 +1518,13 @@ interface SelectorProps {
 }
 const Selector: FC<SelectorProps> = memo(
   ({ type, label, value, index, path = undefined, disabled = false }) => {
-    const { handleSelector, rangeType, selectorData } = useCalendarCore();
+    const { coreHandleSelector, rangeType, selectorData } = useCalendarCore();
 
     const [active, setActive] = useState(() => selectorData.initActive(type, index));
 
     const handleClick = () => {
       if (disabled) return;
-      handleSelector(value, rangeType, type, index);
+      coreHandleSelector(value, rangeType, type, index);
     };
 
     useEffect(() => {
@@ -1561,15 +1587,18 @@ const EmptySelector: FC = () => {
 
 const CalendarError: FC = () => {
   const { helperText } = useGetConst();
+  function fristUpper(text: string) {
+    return text.replace(text[0], (text) => text.toUpperCase());
+  }
   function render(text: string | string[]) {
     if (Array.isArray(text)) {
       return text.map((helper, index) => (
         <span key={index + helper} className="mod-error-item">
-          {`- ${helper}`}
+          {`- ${fristUpper(helper)}`}
         </span>
       ));
     } else {
-      return text;
+      return fristUpper(text);
     }
   }
   return <div className="mod-content-error">{render(helperText)}</div>;
@@ -1619,12 +1648,7 @@ interface ActiveSelector {
 type SetContent = (content: RE[]) => void;
 type SetButton = (label: string) => void;
 type SetHeader = (header: string) => void;
-type HandleSelector = (
-  value: Date | number,
-  rangeType: RangeType,
-  type: Mode,
-  indexSelector: string,
-) => void;
+type HandleSelector = (value: Date) => void;
 type SetDisableArrow = (disableL: boolean, disableR: boolean) => void;
 
 interface RenderDate {
@@ -1664,7 +1688,7 @@ interface CalendarCoreProps {
   block?: boolean;
   setMode: Dispatch<SetStateAction<Mode>>;
   closeDropdown: () => void;
-  handleSelectorClick?: HandleSelector;
+  handleSelector: HandleSelector;
 }
 
 const DatePickerContext = createContext<CalendarStore>({} as CalendarStore);
@@ -1682,7 +1706,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   block = false,
   setMode,
   closeDropdown,
-  handleSelectorClick = undefined,
+  handleSelector,
   children,
 }) => {
   /* ----- RENDER DATA ---------------------------------------------------- */
@@ -1810,11 +1834,15 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         this.prev[rangeType] = dateX.toStringIndex();
       }
       this.today = new DateX().toStringIndex();
+      console.table(this);
     },
     initActive(type, index) {
       return this[this.rangeType][type] === index;
     },
     isToday(type, index) {
+      if (type === "month") {
+        console.log(this.today[type], index);
+      }
       return this.today[type] === index;
     },
     isPrevious(type, index) {
@@ -2070,7 +2098,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     },
     [actionButton, closeDropdown, contentData, mode, onChange, rangeMode, selectorData],
   );
-  const handleSelector = useCallback(
+  const coreHandleSelector = useCallback(
     (value: Date | number, rangeType: RangeType, type: Mode, index: string) => {
       if (block) return;
       const { year, month } = contentData.next.getIndexDate();
@@ -2084,14 +2112,12 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         case "day":
           if (value instanceof Date) {
             selectDay(value, index);
-            if (handleSelectorClick && rangeType) {
-              handleSelectorClick(value, rangeType, type, index);
-            }
+            handleSelector(value);
           }
           break;
       }
     },
-    [block, handleSelectorClick, mode, contentData.next, selectDay, selectMonth, selectYear],
+    [block, handleSelector, mode, contentData.next, selectDay, selectMonth, selectYear],
   );
 
   /* 
@@ -2155,7 +2181,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
             onMonthButtonClick,
             onYearButtonClick,
             onArrowClick,
-            handleSelector,
+            coreHandleSelector,
             handleCancel,
             handleApply,
           },
@@ -2186,7 +2212,12 @@ interface CalendarStore {
   onArrowClick: (scroll: 1 | -1) => void;
   handleCancel: () => void;
   handleApply: () => void;
-  handleSelector: HandleSelector;
+  coreHandleSelector: (
+    value: number | Date,
+    rangeType: "start" | "end",
+    type: Mode,
+    index: string,
+  ) => void;
 }
 /* 
   ------------------------------------------------------------------------- 

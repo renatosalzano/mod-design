@@ -189,7 +189,7 @@ export class DateX extends Date {
       const monthString = `${month}`.padStart(2, "0");
       const type = "month";
       const label = months[month];
-      const index = monthString;
+      const index = `${year}${monthString}`;
       const key = `${year}${monthString}`;
       const value = month;
       const path = getPathMonth(date(year, month), rangeStart, rangeEnd, rangeType);
@@ -288,6 +288,28 @@ export class DateX extends Date {
     const m = `${month + 1}`.padStart(2, "0");
     const d = `${day}`.padStart(2, "0");
     return `${y}-${m}-${d}`;
+  }
+  increment(type: "year" | "month" | "day") {
+    const { year, month, day } = toIndexDate(this);
+    switch (type) {
+      case "year":
+        return new DateX(year + 1, month, day);
+      case "month":
+        return new DateX(year, month + 1, day);
+      case "day":
+        return new DateX(year, month, day + 1);
+    }
+  }
+  decrement(type: "year" | "month" | "day") {
+    const { year, month, day } = toIndexDate(this);
+    switch (type) {
+      case "year":
+        return new DateX(year - 1, month, day);
+      case "month":
+        return new DateX(year, month - 1, day);
+      case "day":
+        return new DateX(year, month, day - 1);
+    }
   }
 }
 

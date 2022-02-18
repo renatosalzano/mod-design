@@ -52,6 +52,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
         apply: "Conferma",
         cancel: "Annulla",
         fix: "Aggiusta",
+        reset: "Reset",
         mustBeLessThan: "deve essere minore di",
         mustBeGreaterThan: "deve essere maggiore di",
       }}

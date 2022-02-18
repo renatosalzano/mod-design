@@ -386,9 +386,7 @@ const ModInputDateRange: FC<InputDateRangeProps> = ({
   }).current;
 
   useEffect(() => {
-    if (!error) {
-      rangeDate.update(value);
-    }
+    rangeDate.update(value);
   }, [error, rangeDate, value]);
 
   const handleMinChange = useCallback(
@@ -466,6 +464,8 @@ interface StateData {
   setMonth(month: number): void;
   setDay(day: number): void;
   cancel(type: "Y" | "M" | "D"): void;
+  increment(type: "Y" | "M" | "D"): void;
+  decrement(type: "Y" | "M" | "D"): void;
   getDayInMonth(): { max: number; maxFristDigit: number };
 }
 const ModInputDate: FC<InputDateProps> = ({
@@ -612,6 +612,8 @@ const ModInputDate: FC<InputDateProps> = ({
           this.status = "unfilled";
       }
     },
+    increment(type: "Y" | "M" | "D") {},
+    decrement(type: "Y" | "M" | "D") {},
   }).current;
 
   useEffect(() => {
@@ -681,12 +683,6 @@ const ModInputDate: FC<InputDateProps> = ({
   ----- <INPUT />
   ------------------------------------------------------------------------- 
 */
-type HandleKeydown = (
-  event: KeyboardEvent<IE>,
-  value: number,
-  type: InputType,
-  index: number,
-) => void;
 
 interface InputProps {
   type: InputType;
@@ -732,20 +728,21 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
     };
   }, [index, inputData, select, unselect]);
   interface Handle {
+    value: string;
     fristDigit: string;
     scroll: boolean;
-    value: string;
     yearDigit: number[];
     update(digit: number): void;
     notDigit(value: string): boolean;
     change(event: ChangeEvent<IE>): any;
-    year(digit: number): void;
-    month(digit: number): void;
-    day(digit: number): void;
+    Y(digit: number): void;
+    M(digit: number): void;
+    D(digit: number): void;
     render(digit: number): void;
     scrollInput(prev?: boolean): void;
     checkFristDigit(): void;
     cancel(): void;
+    log(): void;
   }
 
   const handle = useRef<Handle>({
@@ -767,6 +764,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
           break;
       }
       this.value = "";
+      this.log();
     },
     notDigit(value) {
       if (value === "" || /^\d+$/.test(value)) return false;
@@ -779,19 +777,19 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
         const digit = parseInt(value);
         switch (type) {
           case "Y":
-            this.year(digit);
+            this.Y(digit);
             break;
           case "M":
-            this.month(digit);
+            this.M(digit);
             break;
           case "D":
           default:
-            this.day(digit);
+            this.D(digit);
             break;
         }
       }
     },
-    year(digit) {
+    Y(digit) {
       if (this.fristDigit) {
         if (this.fristDigit.length > 0 && this.fristDigit.length < 3) {
           this.fristDigit = `${digit}`;
@@ -812,7 +810,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
         }
       }
     },
-    month(digit) {
+    M(digit) {
       if (this.fristDigit === "") {
         if (digit >= 0 && digit <= 1) {
           this.fristDigit = `${digit}`;
@@ -837,7 +835,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
         this.scrollInput();
       }
     },
-    day(digit) {
+    D(digit) {
       const { max, maxFristDigit } = stateData.getDayInMonth();
       if (this.fristDigit === "") {
         if (digit >= 0 && digit <= maxFristDigit) {
@@ -865,7 +863,6 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
     },
     render(digit) {
       const update = toDigit(`${digit}`);
-
       switch (type) {
         case "Y":
           stateData.renderDate(update, null, null);
@@ -923,6 +920,9 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
       setFristDigit("");
       stateData.cancel(type);
     },
+    log() {
+      console.table(this);
+    },
   }).current;
 
   /* 
@@ -930,7 +930,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
            */
 
   const handleKeydown = useCallback(
-    (event: KeyboardEvent<IE>) => {
+    (event: KeyboardEvent<IE>, value: string) => {
       if (disabled || readonly) return;
       switch (event.code) {
         case "Space":
@@ -953,13 +953,94 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
           break;
         case "ArrowUp":
           event.preventDefault();
+          if (handle.notDigit(value)) {
+            switch (type) {
+              case "Y":
+                const currYear = new Date().getFullYear();
+                handle.update(currYear);
+                break;
+              case "M":
+                handle.update(0);
+                break;
+              case "D":
+                handle.update(1);
+                break;
+            }
+          } else {
+            let digit = parseInt(value);
+            switch (type) {
+              case "Y":
+                if (digit < 9999) {
+                  handle.update(++digit);
+                } else {
+                  handle.update(1);
+                }
+                break;
+              case "M":
+                if (digit < 12) {
+                  handle.update(digit);
+                } else {
+                  handle.update(0);
+                }
+                break;
+              case "D":
+                const { dayInMonth } = stateData;
+                if (digit < dayInMonth) {
+                  handle.update(++digit);
+                } else {
+                  handle.update(1);
+                }
+                break;
+            }
+          }
           break;
         case "ArrowDown":
           event.preventDefault();
+          if (handle.notDigit(value)) {
+            switch (type) {
+              case "Y":
+                const currYear = new Date().getFullYear();
+                handle.update(currYear);
+                break;
+              case "M":
+                handle.update(11);
+                break;
+              case "D":
+                const { dayInMonth } = stateData;
+                handle.update(dayInMonth);
+                break;
+            }
+          } else {
+            let digit = parseInt(value);
+            switch (type) {
+              case "Y":
+                if (digit > 1) {
+                  handle.update(--digit);
+                } else {
+                  handle.update(9999);
+                }
+                break;
+              case "M":
+                if (digit > 1) {
+                  handle.update(digit - 2);
+                } else {
+                  handle.update(11);
+                }
+                break;
+              case "D":
+                const { dayInMonth } = stateData;
+                if (digit > 1) {
+                  handle.update(--digit);
+                } else {
+                  handle.update(dayInMonth);
+                }
+                break;
+            }
+          }
           break;
       }
     },
-    [disabled, handle, index, inputData, onSpaceDown, readonly],
+    [disabled, handle, index, inputData, onSpaceDown, readonly, stateData, type],
   );
 
   const handleBlur = useCallback(() => {
@@ -994,7 +1075,7 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
         value={fristDigit}
         onChange={handleChange}
         onBlur={handleBlur}
-        onKeyDown={handleKeydown}
+        onKeyDown={(e) => handleKeydown(e, value)}
         disabled={disabled || readonly}
         readOnly={readonly}
       />

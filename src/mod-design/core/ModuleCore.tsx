@@ -113,6 +113,7 @@ type UseModuleCore = ({ focused, disabled, error, color, helper }: ModuleCoreArg
   setBlur(): void;
   setError(message?: string | string[]): void;
   clearError(): void;
+  setHelperText(text?: string | string[]): void;
 };
 
 export const useModuleCore: UseModuleCore = ({
@@ -173,6 +174,13 @@ export const useModuleCore: UseModuleCore = ({
     clearError() {
       helperControl.restore();
       setIsError(false);
+    },
+    setHelperText(text) {
+      if (text !== undefined) {
+        helperControl.setHelper(text);
+      } else {
+        helperControl.restore();
+      }
     },
   };
 };
