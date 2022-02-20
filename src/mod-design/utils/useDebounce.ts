@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 export class Debounce {
   private timeout: NodeJS.Timeout;
   constructor() {
@@ -10,6 +12,11 @@ export class Debounce {
   cancel() {
     clearTimeout(this.timeout);
   }
+}
+
+export function useDebouce() {
+  const debounce = useRef(new Debounce());
+  return debounce.current;
 }
 
 export class ClickInRange {

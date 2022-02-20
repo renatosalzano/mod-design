@@ -1,20 +1,61 @@
 .mod-button {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  overflow: hidden;
   outline: none;
   border: none;
   user-select: none;
-  background-color: transparent;
+  background-color: #00000000;
   height: 40px;
-  min-width: 40px;
+  min-width: 36px;
   font-size: 14px;
   font-family: "Roboto", sans-serif;
   gap: 4px;
-  border-radius: 4px;
+  border-radius: var(--buttonBorderRadius);
   transform: translate3d(0, 0, 0);
-  transition: all ease-out 0.2s;
+  transition: all ease-out 200ms;
   cursor: pointer;
+  --buttonInnerColor: var(--fontColor);
+  --buttonBackground: transparent;
+  --buttonBackgroundOpacity: 0;
+  --buttonBorderRadius: 4px;
+  --buttonShadow: 0 3px 1px -2px #0003, 0 2px 2px #00000024, 0 1px 5px #0000001f;
+  --rippleColor: #ffffff;
+  --rippleOpacity: 0.4;
+  --buttonBackground: var(--errorColor);
+  &.mod-margin {
+    margin: 8px 8px 8px 0;
+  }
+  .mod-button-inner {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    color: var(--buttonInnerColor);
+    border-radius: var(--borderRadius);
+  }
+  .mod-button-background {
+    position: absolute;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--buttonBorderRadius);
+    z-index: -1;
+    .mod-insert-color {
+      display: block;
+      width: 100%;
+      height: 100%;
+      opacity: var(--buttonBackgroundOpacity);
+      background-color: var(--buttonBackground);
+      transition: all 200ms ease;
+    }
+  }
   &.mod-disabled {
     cursor: default;
     pointer-events: none;
@@ -24,20 +65,54 @@
   }
 }
 
+/* 
+  ------------------------------------------------------------------------- 
+  ----- MATERIAL BUTTON CLASS
+  ------------------------------------------------------------------------- 
+*/
+
+.mat-basic {
+  font-weight: 500;
+  --color: var(--mainColor);
+  --buttonInnerColor: var(--color);
+  --buttonBackground: var(--color);
+  --buttonBackgroundOpacity: 0;
+  --rippleOpacity: 0.2;
+  --rippleColor: var(--color);
+  &:hover {
+    --buttonBackgroundOpacity: 0.1;
+  }
+  &.raised {
+    box-shadow: var(--buttonShadow);
+  }
+}
+
+.mat-flat {
+  color: var(--fontColorSecondary);
+  --buttonInnerColor: var(--fontColorSecondary);
+  --buttonBackground: var(--color);
+  --buttonBackgroundOpacity: 1;
+}
+
 .mat-button-base {
   min-height: 36px;
   padding: 0px 16px;
 }
 .mod-primary {
-  background-color: var(--color);
+  --color: var(--mainColor);
   color: var(--fontColorSecondary);
   font-weight: 500;
+  .mod-button-background {
+    background-color: var(--color);
+  }
 }
 
 .mod-hover {
   color: var(--fontColor);
   &:hover {
-    background-color: var(--hoverColor);
+    .mod-button-background {
+      background-color: var(--hoverColor);
+    }
   }
 }
 
@@ -57,7 +132,9 @@
 }
 
 .mod-arrow-R {
-  transform: rotate(180deg);
+  .mod-arrow-shape {
+    transform: rotate(135deg);
+  }
 }
 
 .mod-arrow-L,
@@ -67,16 +144,45 @@
   outline: none;
   border: none;
   background-color: transparent;
-  box-sizing: unset;
   padding: 0;
   margin: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
+  width: 40px !important;
+  height: 40px !important;
+  --buttonBorderRadius: 20px;
   transition: all ease-out 0.2s;
   cursor: pointer;
   &.mod-disabled {
     opacity: 0.25;
     pointer-events: none;
+  }
+}
+
+/* 
+  ------------------------------------------------------------------------- 
+  ----- RIPPLE EFFECT
+  ------------------------------------------------------------------------- 
+*/
+
+.mod-ripple {
+  position: absolute;
+  display: block;
+  width: var(--rippleSize);
+  height: var(--rippleSize);
+  background: var(--rippleColor);
+  border-radius: 50%;
+  opacity: 1;
+  animation: 400ms ease 1 forwards ripple-effect;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+@keyframes ripple-effect {
+  0% {
+    transform: scale(var(--rippleScaleFactor)) translate3d(0, 0, 0);
+    opacity: var(--rippleOpacity);
+  }
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 0;
   }
 }

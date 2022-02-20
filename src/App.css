@@ -16,6 +16,9 @@
   display: flex;
   flex-direction: column;
 }
+.form-example .mod-button {
+  width: 80px;
+}
 
 .form-flex button {
   width: 100px;

@@ -113,6 +113,9 @@ interface Props extends CoreProps {
   option?: Option;
   actionButton?: boolean;
   inputProps?: InputProps;
+  /**
+   * Disable scroll animation.
+   */
   disableAnimation?: boolean;
   onChange:
     | ((value: Date | null) => void)
@@ -165,6 +168,7 @@ const DatePicker: FC<Props> = ({
   const [dropdown, setDropdown] = useState(false);
   const [close, setClose] = useState(false);
   const [stateValue, setStateValue] = useState<any>(value);
+  const [mobile, setMobile] = useState(false);
 
   /* 
   ------------------------------------------------------------------------- 
@@ -510,6 +514,12 @@ const DatePicker: FC<Props> = ({
   const handleChange = useCallback((value: any) => data.handleChange(value), [data]);
   const handleSelector = useCallback((value: any) => data.handleSelector(value), [data]);
   const handleClose = useCallback(() => data.handleClose(), [data]);
+  const handleTouch = useCallback(() => {
+    console.log("mobile");
+    setMobile(true);
+  }, []);
+
+  const rangeMode = range && mobile ? true : range;
 
   return (
     <ModuleCore
@@ -551,13 +561,13 @@ const DatePicker: FC<Props> = ({
             inputProps={inputProps}
             themeColor={themeColor}
             onIconClick={() => setDropdown(true)}
-            onIconTouch={() => null}
+            onIconTouch={handleTouch}
             onSpaceDown={() => setDropdown(true)}
             onChange={handleInputValue}
             error={isError || internalError}
           />
           <DatePickerDropdown
-            range={range}
+            range={rangeMode}
             value={value}
             minDate={checkedMinDate}
             maxDate={maxDate}
@@ -1093,7 +1103,6 @@ const CalendarRangeHeader: FC<CalendarRangeTabs> = ({
         <Button cssCustom={setEndClassName()} onClick={handleTabEnd}>
           {endDate}
         </Button>
-        <div className="bottom-shadow"></div>
       </div>
       <div className="mod-bar-date">{render()}</div>
     </Fragment>
@@ -1175,10 +1184,7 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
           <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
             {cancel}
           </Button>
-          <Button
-            onClick={handleApply}
-            cssCustom="mat-button-base mod-primary"
-            disabled={!validRange}>
+          <Button onClick={handleApply} cssCustom="mat-button-base mat-flat" disabled={!validRange}>
             {apply}
           </Button>
         </div>
@@ -1187,7 +1193,7 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
           <Button onClick={handleReset} cssCustom="mat-button-base mod-hover">
             Reset
           </Button>
-          <Button onClick={handleFix} cssCustom="mat-button-base mod-primary">
+          <Button onClick={handleFix} cssCustom="mat-button-base mat-flat">
             {fix}
           </Button>
         </div>
@@ -1292,7 +1298,6 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
   const { setButtonLabel, onSwitchButtonClick, onMonthButtonClick, onYearButtonClick } =
     useCalendarCore();
   const [label, setLabel] = useState("");
-  /* handleMonthClick handleYearClick handleModeButton */
 
   const subscribe = useRef(() => {
     setButtonLabel.current = (label) => setLabel(label);
@@ -1317,11 +1322,11 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     if (monthButton && mode === "day") {
       return (
         <div className="mod-button-wrap">
-          <Button onClick={onMonthButtonClick} cssCustom="mod-hover">
+          <Button onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button mod-hover">
             {split(label)[0]}
             <ArrowIcon />
           </Button>
-          <Button cssCustom="mod-hover" onClick={onYearButtonClick}>
+          <Button cssCustom="mod-calendar-header-button mod-hover " onClick={onYearButtonClick}>
             {split(label)[1]}
             <ArrowIcon />
           </Button>
@@ -1329,7 +1334,7 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
       );
     }
     return (
-      <Button onClick={onSwitchButtonClick} cssCustom="mod-hover">
+      <Button onClick={onSwitchButtonClick} cssCustom="mod-calendar-header-button mod-hover">
         {label}
         <ArrowIcon flip={mode !== "day"} />
       </Button>
@@ -1504,7 +1509,7 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
               <Button onClick={handleReset} cssCustom="mat-button-base mod-hover">
                 {reset}
               </Button>
-              <Button onClick={handleFix} cssCustom="mat-button-base mod-primary">
+              <Button onClick={handleFix} cssCustom="mat-button-base mat-flat">
                 {fix}
               </Button>
             </div>
@@ -1513,7 +1518,7 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
               <Button onClick={coreHandleCancel} cssCustom="mat-button-base mod-hover">
                 {cancel}
               </Button>
-              <Button onClick={coreHandleApply} cssCustom="mat-button-base mod-primary">
+              <Button onClick={coreHandleApply} cssCustom="mat-button-base mat-flat">
                 {apply}
               </Button>
             </div>
@@ -2215,31 +2220,14 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   */
 
   const coreHandleCancel = useCallback(() => {
-    if (mode === "day") {
-      handleClose();
-      handleCancel();
-    } else {
-      /* setDay(); */
-    }
-  }, [mode, handleCancel, handleClose]);
+    handleClose();
+    handleCancel();
+  }, [handleCancel, handleClose]);
+
   const coreHandleApply = useCallback(() => {
-    switch (mode) {
-      case "year":
-        if (monthButton) {
-          /* setDay(); */
-        } else {
-          /*  setMonth(); */
-        }
-        break;
-      case "month":
-        /* setDay(); */
-        break;
-      case "day":
-        handleApply(new Date(contentData.curr));
-        handleClose();
-        break;
-    }
-  }, [contentData.curr, handleApply, handleClose, mode, monthButton]);
+    handleApply(new Date(contentData.curr));
+    handleClose();
+  }, [contentData.curr, handleApply, handleClose]);
 
   function setClassName() {
     let classname = "mod-calendar";

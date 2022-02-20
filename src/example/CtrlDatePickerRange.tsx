@@ -29,7 +29,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
 
   return (
     <DatePicker
-      range="2-calendar"
+      range
       name="DATEPICKER RANGE TEST"
       value={dateRange}
       onChange={handleDateRange}

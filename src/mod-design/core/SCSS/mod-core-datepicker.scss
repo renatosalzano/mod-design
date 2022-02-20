@@ -1,8 +1,9 @@
 .mod-datepicker {
   min-width: 260px;
   --calendarFontColor: var(--fontColor);
-  --calendarShadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #0000001f;
+  --calendarShadow: 0 2px 4px -1px #0003, 0 4px 5px #00000024, 0 1px 10px #00000036;
   --calendarHeight: 350px;
+  --calendarBorderRadius: 4px;
   --contentHeaderColor: var(--idleColor);
   --contentFontSize: 13px;
   --contentBorderRadius: 20px;
@@ -31,8 +32,9 @@
     position: absolute;
     top: 0;
     right: 0;
+    bottom: 0;
     width: var(--height);
-    height: 100%;
+    height: var(--height);
     color: var(--calendarFontColor);
     cursor: pointer;
     z-index: 5000;
@@ -49,11 +51,12 @@
   min-height: var(--calendarHeight);
   background-color: var(--backgroundColor);
   box-shadow: var(--calendarShadow);
-  border-radius: 8px;
+  border-radius: var(--calendarBorderRadius);
   z-index: 5000;
   &.mod-range-mode {
+    position: relative;
     border-radius: 0;
-    padding-top: 8px;
+    box-shadow: none;
   }
 }
 
@@ -69,12 +72,21 @@
   padding: 16px 8px 8px 8px;
 
   .mod-button {
-    color: var(--calendarFontColor);
-    font-weight: 500;
-    font-family: var(--headerFont);
     font .mod-arrow-icon {
       color: var(--idleColor);
     }
+  }
+  .mod-calendar-header-button {
+    width: auto !important;
+    .mod-button-inner {
+      color: var(--calendarFontColor);
+      font-weight: 500;
+      font-family: var(--headerFont);
+      gap: 8px;
+    }
+  }
+  .mod-calendar-arrow {
+    display: flex;
   }
 }
 
@@ -185,50 +197,6 @@
   height: 248px;
 }
 
-@keyframes translateL {
-  0% {
-    pointer-events: none;
-    transform: translate3D(-100%, 0, 0);
-  }
-  100% {
-    pointer-events: all;
-    transform: translate3D(0%, 0, 0);
-  }
-}
-
-@keyframes translateR {
-  0% {
-    pointer-events: none;
-    transform: translate3D(0%, 0, 0);
-  }
-  100% {
-    pointer-events: all;
-    transform: translate3D(-100%, 0, 0);
-  }
-}
-
-@keyframes translateD {
-  0% {
-    pointer-events: none;
-    transform: translate3D(0, -100%, 0);
-  }
-  100% {
-    pointer-events: all;
-    transform: translate3D(0, 0%, 0);
-  }
-}
-
-@keyframes translateU {
-  0% {
-    pointer-events: none;
-    transform: translate3D(0, 0%, 0);
-  }
-  100% {
-    pointer-events: all;
-    transform: translate3D(0, -100%, 0);
-  }
-}
-
 .mod-calendar-footer {
   display: flex;
   justify-content: flex-end;
@@ -268,7 +236,7 @@
   overflow: hidden;
   min-width: 296px;
   top: 0;
-  border-radius: 8px;
+  border-radius: var(--calendarBorderRadius);
   background-color: var(--backgroundColor);
   box-shadow: var(--calendarShadow);
   z-index: 1000;
@@ -279,7 +247,7 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--hoverColor);
 
   .mod-calendar-tab {
     overflow: hidden;
@@ -291,17 +259,18 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     transition: all 150ms ease-out;
-    color: var(--backgroundColor);
+    color: var(--hoverColor);
     z-index: 2000;
     &.mod-idle-tab {
+      color: var(--idleColor);
+      opacity: 0.6;
       &:hover {
         color: var(--color);
+        opacity: 0.8;
       }
     }
     &.mod-active-tab {
-      color: #fff;
-      background-color: var(--color);
-      box-shadow: var(--calendarShadow);
+      color: var(--color);
       z-index: 3000;
     }
     &.mod-full-tab {
@@ -313,25 +282,16 @@
       padding: 0;
     }
   }
-  .bottom-shadow {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 1px;
-    box-shadow: 0 4px 10px rgb(0, 0, 0.4), 0 2px 6px rgb(0, 0, 0.4), 0 2px 2px rgb(0, 0, 0.8);
-    z-index: 2100;
-  }
 }
 .mod-bar-date {
-  padding: 12px 16px;
-  height: 50px;
-  color: #fff;
+  padding: 8px 16px;
+  color: var(--calendarFontColor);
   font-family: "Roboto Mono", monospace;
-  font-size: 20px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 300;
   text-transform: capitalize;
-  background-color: var(--color);
+  color: var(--calendarFontColor);
+  background-color: var(--hoverColor);
 }
 
 .mod-calendar-range-placeholder {
@@ -360,6 +320,7 @@
 }
 
 .mod-calendar-wrap {
+  position: relative;
   display: flex;
   width: 296px;
   transition: all 200ms ease-out;
@@ -374,15 +335,8 @@
     transform: translateX(-100%);
   }
   .mod-calendar {
-    position: relative;
-    box-shadow: none;
-    .mod-calendar-header {
-      padding: 0 8px;
-    }
-    .mod-calendar-separator {
-      margin: 0 8px;
-      padding: 0;
-    }
+    width: 296px;
+    flex-shrink: 0;
   }
 }
 
@@ -395,27 +349,9 @@
 }
 .mod-animation-fadein {
   transform-origin: top;
-  animation: fadein 100ms ease-out forwards;
+  animation: fadein 150ms cubic-bezier(0.29, 0.36, 0.36, 1) forwards;
   &.mod-animation-fadeout {
-    animation: fadeout 100ms ease-out forwards;
-  }
-}
-@keyframes fadein {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-@keyframes fadeout {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
+    animation: fadeout 150ms cubic-bezier(0.29, 0.36, 0.36, 1) forwards;
   }
 }
 
@@ -455,10 +391,10 @@
   .mod-insert-border {
     pointer-events: none;
     position: absolute;
-    top: 0px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
     border-radius: 20px;
     border: 1.5px var(--selectorBorderType) var(--selectorBorderColor);
     opacity: 0.6;
@@ -484,20 +420,18 @@
     z-index: -3;
     opacity: 0.3;
     background-color: var(--color);
-    &.range-start-path-start {
-      left: 20px;
-    }
-    &.range-start-path-end {
-      right: 2px;
-      border-radius: 0 20px 20px 0;
-    }
+
+    &.range-start-path-start,
     &.range-end-path-start {
       left: 2px;
       border-radius: 20px 0 0 20px;
     }
-    &.range-end-path-end {
-      right: 20px;
+    &.range-end-path-end,
+    &.range-start-path-end {
+      right: 2px;
+      border-radius: 0 20px 20px 0;
     }
+
     &.range-start-path-single,
     &.range-end-path-single {
       display: none;
@@ -518,9 +452,7 @@
 
   &.mod-active,
   &.mod-range-start-path-single,
-  &.mod-range-end-path-single,
-  &.mod-range-start-path-start,
-  &.mod-range-end-path-end {
+  &.mod-range-end-path-single {
     color: #fff;
     --selectorBackground: var(--color);
     --selectorBackgroundOpacity: 1;
@@ -575,5 +507,74 @@
   }
   .mod-arrow-icon {
     color: var(--idleColor);
+  }
+}
+
+/* 
+  ------------------------------------------------------------------------- 
+  ----- ANIMATION
+  ------------------------------------------------------------------------- 
+*/
+
+@keyframes fadein {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.6) translate3D(0, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1) translate3D(0, 0, 0);
+  }
+}
+@keyframes fadeout {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes translateL {
+  0% {
+    pointer-events: none;
+    transform: translate3D(-100%, 0, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(0%, 0, 0);
+  }
+}
+
+@keyframes translateR {
+  0% {
+    pointer-events: none;
+    transform: translate3D(0%, 0, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(-100%, 0, 0);
+  }
+}
+
+@keyframes translateD {
+  0% {
+    pointer-events: none;
+    transform: translate3D(0, -100%, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(0, 0%, 0);
+  }
+}
+
+@keyframes translateU {
+  0% {
+    pointer-events: none;
+    transform: translate3D(0, 0%, 0);
+  }
+  100% {
+    pointer-events: all;
+    transform: translate3D(0, -100%, 0);
   }
 }

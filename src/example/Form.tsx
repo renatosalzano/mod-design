@@ -1,3 +1,4 @@
+import { Button } from "../mod-design/core/Button";
 import { DateX } from "../mod-design/utils/DateX";
 import CtrlDatePicker from "./CtrlDatePicker";
 import CtrlDatePickerJS from "./CtrlDatePickerJS";
@@ -19,6 +20,9 @@ const Form = () => {
       <CtrlDatePickerRange name="range" />
       {/* <CtrlDatePickerJS /> */}
       {/* <CtrlSelect /> */}
+      <Button onClick={() => null} cssCustom="mat-basic raised">
+        Ripple
+      </Button>
     </div>
   );
 };

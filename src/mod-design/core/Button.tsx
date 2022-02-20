@@ -1,11 +1,26 @@
-import { FC, KeyboardEvent, memo, WheelEvent } from "react";
+import {
+  FC,
+  KeyboardEvent,
+  memo,
+  MouseEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { CoreProps } from "./ModuleCore";
+import { useDebouce } from "../utils/useDebounce";
+import "./SCSS/mod-core.scss";
 import "./SCSS/mod-core-button.scss";
 
 type KeydownEvent = KeyboardEvent<HTMLButtonElement>;
 
-interface CoreButton {
-  cssCustom?: string;
+interface CoreButton extends CoreProps {
+  disableRipple?: boolean;
   disabled?: boolean;
+  overrideCss?: boolean;
   onClick: () => void;
   onTouch?: () => void;
   onKeydown?: (event: KeydownEvent) => void;
@@ -21,6 +36,9 @@ export const Button: FC<CoreButton> = memo(
   ({
     disabled,
     cssCustom,
+    themeColor,
+    overrideCss,
+    disableRipple,
     onClick,
     onTouch = () => null,
     onKeydown = (_event: KeydownEvent) => null,
@@ -42,8 +60,13 @@ export const Button: FC<CoreButton> = memo(
     };
 
     function setClassName() {
-      let classname = "mod-button";
+      let classname = overrideCss ? "" : "mod-button";
       if (cssCustom) classname += ` ${cssCustom}`;
+      if (themeColor) {
+        classname += ` ${themeColor}`;
+      } else {
+        classname += " mod-theme";
+      }
       if (disabled) classname += " mod-disabled";
       return classname;
     }
@@ -53,7 +76,8 @@ export const Button: FC<CoreButton> = memo(
         onClick={handleClick}
         onTouchStart={handleTouch}
         onKeyDown={handleKeydown}>
-        {children}
+        <span className="mod-button-inner">{children}</span>
+        <Background disableRipple={disableRipple} />
       </button>
     );
   },
@@ -61,41 +85,94 @@ export const Button: FC<CoreButton> = memo(
 
 /* 
   ------------------------------------------------------------------------- 
-  ----- MATERIAL ARROW
+  ----- RIPPLE EFFECT
+  ------------------------------------------------------------------------- 
+*/
+interface BackgroundProps {
+  disableRipple?: boolean;
+}
+
+const Background: FC<BackgroundProps> = ({ disableRipple }) => {
+  const [shadow, setShadow] = useState<"idle" | "moved">("idle");
+  const [ripples, setRipples] = useState<ReactNode[]>([]);
+  const mounted = useRef(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const setRippleWidth = useRef((node: HTMLDivElement) => {
+    const width = node.offsetWidth * 2;
+    node.style.setProperty("--rippleSize", width + "px");
+    node.style.setProperty("--rippleScaleFactor", `${20 / width}`);
+  });
+
+  const debounce = useDebouce();
+  const createRipple = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (disableRipple) return;
+      const node = event.target as HTMLDivElement;
+      const rect = node.getBoundingClientRect();
+      const half = node.offsetWidth;
+      const props = {
+        top: `${event.clientY - rect.top - half}px`,
+        left: `${event.clientX - rect.left - half}px`,
+      };
+      const key = new Date().getMilliseconds() + Math.random();
+      setRipples([...ripples, <RippleEffect key={key} {...props} />]);
+      debounce.cancel();
+      debounce.debounce(() => setRipples([]), 400);
+    },
+    [debounce, disableRipple, ripples],
+  );
+
+  useEffect(() => {
+    setRippleWidth.current(ref.current as HTMLDivElement);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      setRipples([]);
+    };
+  }, []);
+  return (
+    <div ref={ref} className="mod-button-background" onClick={createRipple}>
+      <div className="mod-insert-color" />
+      {ripples}
+    </div>
+  );
+};
+
+interface RippleProps {
+  top: string;
+  left: string;
+}
+const RippleEffect: FC<RippleProps> = ({ top, left }) => {
+  return <span className="mod-ripple" style={{ top, left }} />;
+};
+
+/* 
+  ------------------------------------------------------------------------- 
+  ----- ARROW
   ------------------------------------------------------------------------- 
 */
 
 interface ArrowProps extends CoreButton {
   arrow: "L" | "R" | "U" | "D";
-  onWheelUp?: () => void;
-  onWheelDown?: () => void;
 }
 
 export const MatArrow: FC<ArrowProps> = memo(
-  ({ arrow, disabled, cssCustom, onClick, onWheelUp, onWheelDown }) => {
-    const handleClick = () => {
-      if (disabled) return;
-      onClick();
-    };
-    const handleWheel = (event: WheelEvent<HTMLButtonElement>) => {
-      if (event.deltaY > 0) {
-        /* console.log("DOWN"); */
-        if (onWheelDown) onWheelDown();
-      } else {
-        /* console.log("UP"); */
-        if (onWheelUp) onWheelUp();
-      }
-    };
-    function setClassName() {
+  ({ arrow, disabled, disableRipple, themeColor, cssCustom, onClick }) => {
+    function setArrowClass() {
       let classname = `mod-arrow-${arrow}`;
       if (cssCustom) classname += ` ${cssCustom}`;
-      if (disabled) classname += " mod-disabled";
       return classname;
     }
     return (
-      <button className={setClassName()} onClick={handleClick} onWheel={handleWheel}>
+      <Button
+        cssCustom={setArrowClass()}
+        onClick={onClick}
+        disabled={disabled}
+        themeColor={themeColor}>
         <div className="mod-arrow-shape" />
-      </button>
+        <Background disableRipple={disableRipple} />
+      </Button>
     );
   },
 );

@@ -3,12 +3,12 @@
 .mod-theme {
   --fontColor: #000000de;
   --fontColorSecondary: #ffffffde;
-  --idleColor: rgba(29, 30, 32, 0.5);
-  --mainColor: rgb(72, 140, 228);
+  --idleColor: #757575;
+  --mainColor: #0277bd;
   --successColor: green;
   --warningColor: yellow;
   --errorColor: #f44336;
-  --hoverColor: rgba(136, 149, 163, 0.1);
+  --hoverColor: #eeeeee;
   --disabledColor: rgba(48, 48, 48, 0.25);
   --backgroundColor: #ffffff;
 }
@@ -17,7 +17,7 @@
   --fontColor: #ffffffde;
   --fontColorSecondary: #000000de;
   --idleColor: #d5dae4d3;
-  --mainColor: #1e88e5;
+  --mainColor: #29b6f6;
   --successColor: green;
   --warningColor: yellow;
   --errorColor: #f44336;
