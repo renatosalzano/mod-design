@@ -3,6 +3,7 @@ import {
   KeyboardEvent,
   memo,
   MouseEvent,
+  MutableRefObject,
   ReactNode,
   useCallback,
   useEffect,
@@ -70,77 +71,47 @@ export const Button: FC<CoreButton> = memo(
 
     const mounted = useRef(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const handleRipple = useRef({
-      start() {},
-      end() {},
-    }).current;
+    const endRipple = useRef(() => null);
 
     const debounce = useDebouce();
-    const startTime = useRef(0);
-    const rippleData = useRef({
-      disableRipple,
-      startTime: 0,
-      rippleProps: {},
-      getTime() {
-        return new Date().getTime();
-      },
-      mouseEvent() {
-        return {
-          onMouseDown: () => {
-            if(disableRipple) return;
-            this.startTime = this.getTime();
-          },
-          onMouseUp: () => null,
-          onMouseLeave: () => null,
-        };
-      },
-    }).current;
 
     const handleMouseDown = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
         if (disableRipple) return;
-        startTime.current = new Date().getTime();
+        debounce.cancel();
         const node = event.target as HTMLButtonElement;
         const rect = node.getBoundingClientRect();
         const top = event.clientY - rect.top;
         const left = event.clientX - rect.left;
-        const width = node.offsetWidth - 10;
+        const width = node.offsetWidth;
         const size = node.offsetWidth * 2;
         const props = {
           top: `${top - width}px`,
-          left: `${left - rect.left - width}px`,
+          left: `${left - width}px`,
           size: `${size}px`,
           scale: `${20 / size}`,
-          handleRipple,
+          endRipple,
         };
         const key = new Date().getMilliseconds() + Math.random();
         setRipples([...ripples, <RippleEffect key={key} {...props} />]);
-        handleRipple.start();
         setShadow("blur");
       },
-      [disableRipple, handleRipple, ripples],
+      [debounce, disableRipple, ripples],
     );
 
     const handleMouseUp = () => {
       if (disabled) return;
-      const elapsedTime = new Date().getTime() - startTime.current;
-      if (elapsedTime < 200) {
-        /* CLICK */
-      } else {
-        /* PRESSED */
-      }
-      handleRipple.end();
-
       setShadow("idle");
-      onClick(); /* 
-      debounce.cancel();
-      debounce.debounce(() => setRipples([]), 1200); */
+      endRipple.current();
+      debounce.debounce(() => setRipples([]), 400);
+      onClick();
     };
 
     const handleMouseLeave = () => {
       if (disabled) return;
-      handleRipple.end();
       setShadow("idle");
+      endRipple.current();
+      debounce.debounce(() => setRipples([]), 400);
     };
 
     const handleTouch = () => {
@@ -200,9 +171,11 @@ export const Button: FC<CoreButton> = memo(
       <button
         ref={buttonRef}
         className={`${setMaterialClass()} ${setClassName()}`}
-        {...rippleData.mouseEvent()}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         onTouchStart={handleTouch}
-        onKeyDown={handleKeydown}>
+        onKeyDown={handleKeydown}
+        onMouseLeave={handleMouseLeave}>
         <div className="mod-button-label">
           {startIcon}
           {children}
@@ -226,22 +199,19 @@ interface RippleProps {
   left: string;
   size: string;
   scale: string;
-  singleRipple?: boolean;
-  endRipple?: () => void;
-  handleRipple: {
-    start(): void;
-    end(): void;
-  };
+  endRipple: MutableRefObject<() => void>;
 }
-const RippleEffect: FC<RippleProps> = ({ top, left, size, scale, singleRipple, endRipple }) => {
-  const [rippleEnd, setRipple] = useState(false);
+const RippleEffect: FC<RippleProps> = ({ top, left, size, scale, endRipple }) => {
+  const [rippleEnd, setEndRipple] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
-  /* useEffect(() => {
-    handleRipple.end = () => setRipple(true);
+
+  useEffect(() => {
+    endRipple.current = () => setEndRipple(true);
     return () => {
-      handleRipple.end = () => {};
+      endRipple.current = () => null;
     };
-  }, [handleRipple]); */
+  }, [endRipple]);
+
   useEffect(() => {
     const node = ref.current as HTMLSpanElement;
     node.style.setProperty("--rippleSize", size);

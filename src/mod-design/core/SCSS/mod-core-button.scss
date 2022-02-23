@@ -172,6 +172,7 @@
   user-select: none !important;
   animation: 400ms ease 1 forwards ripple-effect;
   &.ripple-end {
+    border-radius: 0;
     animation: 400ms ease 1 forwards ripple-effect-end;
   }
 }
@@ -184,6 +185,7 @@
   100% {
     transform: scale(1) translate3d(0, 0, 0);
     opacity: var(--rippleOpacity);
+    border-radius: 0;
   }
 }
 
