@@ -16,7 +16,6 @@ import { useDebouce } from "../utils/useDebounce";
 import "./SCSS/mod-core-button.scss";
 
 type KeydownEvent = KeyboardEvent<HTMLButtonElement>;
-type MaterialStyle = "mat-basic" | "mat-flat" | "mat";
 
 interface CoreButton extends MaterialButton {
   disableRipple?: boolean;
@@ -24,6 +23,7 @@ interface CoreButton extends MaterialButton {
   startIcon?: ReactNode;
   endIcon?: ReactNode;
   overrideCss?: boolean;
+  active?: boolean;
   onClick: () => void;
   onTouch?: () => void;
   onKeydown?: (event: KeydownEvent) => void;
@@ -54,6 +54,7 @@ export const Button: FC<CoreButton> = memo(
     disableRipple,
     startIcon,
     endIcon,
+    active,
     matBasic,
     matFlat,
     matIcon,
@@ -69,7 +70,6 @@ export const Button: FC<CoreButton> = memo(
     const [ripples, setRipples] = useState<ReactNode[]>([]);
     const [shadow, setShadow] = useState<"idle" | "blur">("idle");
 
-    const mounted = useRef(false);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const endRipple = useRef(() => null);
 
@@ -83,11 +83,11 @@ export const Button: FC<CoreButton> = memo(
         const rect = node.getBoundingClientRect();
         const top = event.clientY - rect.top;
         const left = event.clientX - rect.left;
-        const width = node.offsetWidth;
-        const size = node.offsetWidth * 2;
+        const size = node.offsetWidth * 2.5;
+        const offset = size / 2;
         const props = {
-          top: `${top - width}px`,
-          left: `${left - width}px`,
+          top: `${top - offset}px`,
+          left: `${left - offset}px`,
           size: `${size}px`,
           scale: `${20 / size}`,
           endRipple,
@@ -103,7 +103,7 @@ export const Button: FC<CoreButton> = memo(
       if (disabled) return;
       setShadow("idle");
       endRipple.current();
-      debounce.debounce(() => setRipples([]), 400);
+      debounce.debounce(() => setRipples([]), 800);
       onClick();
     };
 
@@ -111,7 +111,7 @@ export const Button: FC<CoreButton> = memo(
       if (disabled) return;
       setShadow("idle");
       endRipple.current();
-      debounce.debounce(() => setRipples([]), 400);
+      debounce.debounce(() => setRipples([]), 800);
     };
 
     const handleTouch = () => {
@@ -126,9 +126,7 @@ export const Button: FC<CoreButton> = memo(
     };
 
     useEffect(() => {
-      mounted.current = true;
       return () => {
-        mounted.current = false;
         setRipples([]);
       };
     }, []);
@@ -203,6 +201,9 @@ interface RippleProps {
 }
 const RippleEffect: FC<RippleProps> = ({ top, left, size, scale, endRipple }) => {
   const [rippleEnd, setEndRipple] = useState(false);
+  const [endRippleClass, setEndRippleClass] = useState("");
+  const [rippleVisible, setRippleVisible] = useState(true);
+  const startTime = useRef(new Date().getTime());
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -218,13 +219,34 @@ const RippleEffect: FC<RippleProps> = ({ top, left, size, scale, endRipple }) =>
     node.style.setProperty("--rippleScaleFactor", scale);
   }, [scale, size]);
 
-  function setClassname() {
-    let classname = "mod-ripple";
-    if (rippleEnd) classname += " ripple-end";
-    return classname;
-  }
+  const delayRippleAnimation = useCallback(() => {
+    const timeElapsed = new Date().getTime() - startTime.current;
+    if (timeElapsed < 250) {
+      const timeLeft = 250 - timeElapsed;
+      setTimeout(() => {
+        setEndRippleClass("ripple-end");
+        setTimeout(() => setRippleVisible(false), 200);
+      }, timeLeft);
 
-  return <span ref={ref} className={setClassname()} style={{ top, left }} />;
+      return;
+    } else {
+      setEndRippleClass("ripple-end");
+      setTimeout(() => setRippleVisible(false), 200);
+      return;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (rippleEnd) delayRippleAnimation();
+  }, [delayRippleAnimation, rippleEnd]);
+
+  return (
+    <>
+      {rippleVisible && (
+        <span ref={ref} className={`mod-ripple ${endRippleClass}`} style={{ top, left }} />
+      )}
+    </>
+  );
 };
 
 /* 

@@ -93,7 +93,7 @@
 
 .mat-flat {
   color: var(--fontColorSecondary);
-  --buttonInnerColor: var(--fontColorSecondary);
+  --buttonTextColor: var(--fontColorSecondary);
   --buttonBackground: var(--color);
   --buttonBackgroundOpacity: 1;
 }
@@ -102,6 +102,13 @@
   width: 36px;
   height: 36px;
   padding: 0;
+
+  --buttonTextColor: var(--fontColor);
+  --buttonBackground: var(--color);
+  --buttonBackgroundOpacity: 0;
+  --buttonBorderRadius: 50%;
+  --rippleOpacity: 0.2;
+  --rippleColor: var(--color);
 }
 
 .mod-hover {
@@ -170,10 +177,9 @@
   opacity: var(--rippleOpacity);
   pointer-events: none !important;
   user-select: none !important;
-  animation: 400ms ease 1 forwards ripple-effect;
+  animation: 250ms ease-in 1 forwards ripple-effect;
   &.ripple-end {
-    border-radius: 0;
-    animation: 400ms ease 1 forwards ripple-effect-end;
+    animation: 200ms ease 1 forwards ripple-effect-end;
   }
 }
 
@@ -184,8 +190,6 @@
   }
   100% {
     transform: scale(1) translate3d(0, 0, 0);
-    opacity: var(--rippleOpacity);
-    border-radius: 0;
   }
 }
 

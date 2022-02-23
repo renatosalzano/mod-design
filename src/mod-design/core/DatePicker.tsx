@@ -1322,11 +1322,11 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     if (monthButton && mode === "day") {
       return (
         <div className="mod-button-wrap">
-          <Button onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button mat-basic">
+          <Button matBasic onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button">
             {split(label)[0]}
             <ArrowIcon />
           </Button>
-          <Button cssCustom="mod-calendar-header-button mat-basic" onClick={onYearButtonClick}>
+          <Button matBasic cssCustom="mod-calendar-header-button" onClick={onYearButtonClick}>
             {split(label)[1]}
             <ArrowIcon />
           </Button>
@@ -1335,8 +1335,9 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     }
     return (
       <Button
+        matBasic
         onClick={onSwitchButtonClick}
-        cssCustom="mod-calendar-header-button mat-basic"
+        cssCustom="mod-calendar-header-button"
         endIcon={<ArrowIcon flip={mode !== "day"} />}>
         {label}
       </Button>
@@ -1508,19 +1509,19 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
         <div className="mod-calendar-footer">
           {errorMode ? (
             <div className="mod-button-wrap">
-              <Button onClick={handleReset} cssCustom="mat-basic">
+              <Button matBasic onClick={handleReset}>
                 {reset}
               </Button>
-              <Button onClick={handleFix} cssCustom="mat-basic mat-flat">
+              <Button matFlat onClick={handleFix}>
                 {fix}
               </Button>
             </div>
           ) : (
             <div className="mod-button-wrap">
-              <Button onClick={coreHandleCancel} cssCustom="mat-basic">
+              <Button matBasic onClick={coreHandleCancel}>
                 {cancel}
               </Button>
-              <Button onClick={coreHandleApply} cssCustom="mat-basic mat-flat">
+              <Button matFlat onClick={coreHandleApply}>
                 {apply}
               </Button>
             </div>
