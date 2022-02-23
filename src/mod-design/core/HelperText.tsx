@@ -1,6 +1,7 @@
 import { FC } from "react";
+import { PropColor } from "./ModuleCore";
 interface Props {
-  color?: "main" | "success" | "warning" | "error";
+  color?: PropColor;
   focused?: boolean;
   disabled?: boolean;
   children: string | string[];

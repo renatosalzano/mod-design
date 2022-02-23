@@ -27,13 +27,16 @@
 }
 
 .mod-core {
-  box-sizing: border-box;
-  position: relative;
-  display: flex;
-  width: var(--width);
-  min-height: var(--height);
-  font-family: "Roboto", sans-serif;
-  margin-bottom: 24px;
+  &.mod-shared {
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    width: var(--width);
+    min-height: var(--height);
+    font-family: "Roboto", sans-serif;
+    margin-bottom: 24px;
+  }
+
   --width: 240px;
   --height: 36px;
   --border-width: 1px;

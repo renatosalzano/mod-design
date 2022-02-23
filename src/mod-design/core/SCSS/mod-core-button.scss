@@ -1,60 +1,68 @@
 .mod-button {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   outline: none;
   border: none;
   user-select: none;
-  background-color: #00000000;
   height: 40px;
+  padding: 0 16px;
   min-width: 36px;
   font-size: 14px;
   font-family: "Roboto", sans-serif;
   gap: 4px;
   border-radius: var(--buttonBorderRadius);
+  color: var(--buttonTextColor);
+  background-color: #00000000;
   transform: translate3d(0, 0, 0);
   transition: all ease-out 200ms;
   cursor: pointer;
-  --buttonInnerColor: var(--fontColor);
+  --buttonTextColor: var(--fontColor);
   --buttonBackground: transparent;
   --buttonBackgroundOpacity: 0;
   --buttonBorderRadius: 4px;
   --buttonShadow: 0 3px 1px -2px #0003, 0 2px 2px #00000024, 0 1px 5px #0000001f;
   --rippleColor: #ffffff;
   --rippleOpacity: 0.4;
-  --buttonBackground: var(--errorColor);
+  --buttonBackground: transparent;
   &.mod-margin {
     margin: 8px 8px 8px 0;
   }
-  .mod-button-inner {
+  .mod-button-label {
     display: flex;
-    width: 100%;
-    height: 100%;
     align-items: center;
     justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    white-space: nowrap;
+    user-select: none;
     pointer-events: none;
-    color: var(--buttonInnerColor);
-    border-radius: var(--borderRadius);
   }
+
   .mod-button-background {
+    pointer-events: none;
+    user-select: none;
     position: absolute;
-    overflow: hidden;
-    top: 0;
+    display: block;
     left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     border-radius: var(--buttonBorderRadius);
+    opacity: var(--buttonBackgroundOpacity);
+    background-color: var(--buttonBackground);
+    transition: all 200ms ease;
     z-index: -1;
-    .mod-insert-color {
-      display: block;
-      width: 100%;
-      height: 100%;
-      opacity: var(--buttonBackgroundOpacity);
-      background-color: var(--buttonBackground);
-      transition: all 200ms ease;
-    }
+  }
+  &.mod-raised {
+    box-shadow: var(--buttonShadow);
+  }
+  &.mod-shadow-idle {
+    --buttonShadow: 0 3px 1px -2px #0003, 0 2px 2px #00000024, 0 1px 5px #0000001f;
+  }
+  &.mod-shadow-blur {
+    --buttonShadow: 0 0 2px #0003, 0 0 4px #00000024, 0 0 8px #0000001f;
   }
   &.mod-disabled {
     cursor: default;
@@ -73,17 +81,13 @@
 
 .mat-basic {
   font-weight: 500;
-  --color: var(--mainColor);
-  --buttonInnerColor: var(--color);
-  --buttonBackground: var(--color);
+  --buttonTextColor: var(--fontColor);
+  --buttonBackground: #bdbdbd;
   --buttonBackgroundOpacity: 0;
   --rippleOpacity: 0.2;
-  --rippleColor: var(--color);
+  --rippleColor: #757575;
   &:hover {
     --buttonBackgroundOpacity: 0.1;
-  }
-  &.raised {
-    box-shadow: var(--buttonShadow);
   }
 }
 
@@ -94,17 +98,10 @@
   --buttonBackgroundOpacity: 1;
 }
 
-.mat-button-base {
-  min-height: 36px;
-  padding: 0px 16px;
-}
-.mod-primary {
-  --color: var(--mainColor);
-  color: var(--fontColorSecondary);
-  font-weight: 500;
-  .mod-button-background {
-    background-color: var(--color);
-  }
+.mat-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
 }
 
 .mod-hover {
@@ -170,10 +167,13 @@
   height: var(--rippleSize);
   background: var(--rippleColor);
   border-radius: 50%;
-  opacity: 1;
-  animation: 400ms ease 1 forwards ripple-effect;
+  opacity: var(--rippleOpacity);
   pointer-events: none !important;
   user-select: none !important;
+  animation: 400ms ease 1 forwards ripple-effect;
+  &.ripple-end {
+    animation: 400ms ease 1 forwards ripple-effect-end;
+  }
 }
 
 @keyframes ripple-effect {
@@ -183,6 +183,16 @@
   }
   100% {
     transform: scale(1) translate3d(0, 0, 0);
+    opacity: var(--rippleOpacity);
+  }
+}
+
+@keyframes ripple-effect-end {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: var(--rippleOpacity);
+  }
+  100% {
     opacity: 0;
   }
 }

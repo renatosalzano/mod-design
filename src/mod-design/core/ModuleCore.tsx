@@ -1,4 +1,4 @@
-import { FC, memo, ReactElement, useEffect, useRef, useState } from "react";
+import { createContext, FC, ReactElement, useContext, useEffect, useRef, useState } from "react";
 import HelperText from "./HelperText";
 import "./SCSS/mod-core.scss";
 
@@ -25,14 +25,26 @@ export interface CoreProps {
    *}
    */
   themeColor?: string;
-  color?: "main" | "success" | "warning" | "error";
+  color?: PropColor;
   inputIcon?: ReactElement;
   helperText?: string | string[];
 }
 
+export type PropColor = "primary" | "accent" | "success" | "warn" | "error";
+
+interface Core {
+  color: PropColor;
+  error: boolean;
+  disabled: boolean;
+  focused: boolean;
+}
+
+const ModuleContext = createContext({} as Core);
+export const useCore = () => useContext(ModuleContext);
+
 const ModuleCore: FC<CoreProps> = ({
   border = false,
-  color = "main",
+  color = "primary",
   themeColor = "mod-theme",
   cssCustom,
   focused = false,
@@ -48,14 +60,14 @@ const ModuleCore: FC<CoreProps> = ({
     return children;
   }
 
-  function setCoreClass({
-    cssCustom,
-    color,
-    themeColor,
+  function setCoreClass(
+    cssCustom?: string,
+    color?: PropColor,
+    themeColor?: string,
     focused = false,
     disabled = false,
     error = false,
-  }: Props) {
+  ) {
     let className = "mod-core";
     if (error) className += " mod-error";
     if (cssCustom) className += ` ${cssCustom}`;
@@ -67,22 +79,22 @@ const ModuleCore: FC<CoreProps> = ({
   }
 
   return (
-    <div
-      className={setCoreClass({
-        cssCustom: cssCustom,
-        color: color,
-        themeColor: themeColor,
-        focused: focused,
-        disabled: disabled,
-        error: error,
-      })}>
-      {renderBorder(border)}
-      {helperText && (
-        <HelperText color={color} focused={focused} disabled={disabled}>
-          {helperText}
-        </HelperText>
-      )}
-    </div>
+    <ModuleContext.Provider
+      value={{
+        color,
+        error,
+        disabled,
+        focused,
+      }}>
+      <div className={setCoreClass(cssCustom, color, themeColor, focused, disabled, error)}>
+        {renderBorder(border)}
+        {helperText && (
+          <HelperText color={color} focused={focused} disabled={disabled}>
+            {helperText}
+          </HelperText>
+        )}
+      </div>
+    </ModuleContext.Provider>
   );
 };
 export { ModuleCore };

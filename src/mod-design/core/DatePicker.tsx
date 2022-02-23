@@ -501,7 +501,7 @@ const DatePicker: FC<Props> = ({
   }, [data]);
 
   function setClassName() {
-    let classname = "mod-datepicker";
+    let classname = "mod-shared mod-datepicker";
     if (actionButton) classname += " mod-action-button";
     return classname;
   }
@@ -771,7 +771,7 @@ const DatePickerIcon: FC<DatePickerIconProps> = ({ calendarIcon, onIconClick, on
     return <CalendarIcon />;
   }
   return (
-    <Button cssCustom="mod-datepicker-icon" onClick={onIconClick} onTouch={onIconTouch}>
+    <Button matIcon cssCustom="mod-datepicker-icon" onClick={onIconClick} onTouch={onIconTouch}>
       {render()}
     </Button>
   );
@@ -1097,12 +1097,12 @@ const CalendarRangeHeader: FC<CalendarRangeTabs> = ({
   return (
     <Fragment>
       <div className="mod-calendar-range-header">
-        <Button cssCustom={setStartClassName()} onClick={() => setRangeMode("start")}>
+        <button className={setStartClassName()} onClick={() => setRangeMode("start")}>
           {startDate}
-        </Button>
-        <Button cssCustom={setEndClassName()} onClick={handleTabEnd}>
+        </button>
+        <button className={setEndClassName()} onClick={handleTabEnd}>
           {endDate}
-        </Button>
+        </button>
       </div>
       <div className="mod-bar-date">{render()}</div>
     </Fragment>
@@ -1181,19 +1181,19 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
     <div className={setClassName()}>
       {!errorMode ? (
         <div className="mod-button-wrap">
-          <Button onClick={handleCancel} cssCustom="mat-button-base mod-hover">
+          <Button onClick={handleCancel} cssCustom="mat-basic">
             {cancel}
           </Button>
-          <Button onClick={handleApply} cssCustom="mat-button-base mat-flat" disabled={!validRange}>
+          <Button onClick={handleApply} cssCustom="mat-flat" disabled={!validRange}>
             {apply}
           </Button>
         </div>
       ) : (
         <div className="mod-button-wrap">
-          <Button onClick={handleReset} cssCustom="mat-button-base mod-hover">
+          <Button onClick={handleReset} cssCustom="mat-basic">
             Reset
           </Button>
-          <Button onClick={handleFix} cssCustom="mat-button-base mat-flat">
+          <Button onClick={handleFix} cssCustom="mat-flat">
             {fix}
           </Button>
         </div>
@@ -1322,11 +1322,11 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     if (monthButton && mode === "day") {
       return (
         <div className="mod-button-wrap">
-          <Button onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button mod-hover">
+          <Button onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button mat-basic">
             {split(label)[0]}
             <ArrowIcon />
           </Button>
-          <Button cssCustom="mod-calendar-header-button mod-hover " onClick={onYearButtonClick}>
+          <Button cssCustom="mod-calendar-header-button mat-basic" onClick={onYearButtonClick}>
             {split(label)[1]}
             <ArrowIcon />
           </Button>
@@ -1334,9 +1334,11 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
       );
     }
     return (
-      <Button onClick={onSwitchButtonClick} cssCustom="mod-calendar-header-button mod-hover">
+      <Button
+        onClick={onSwitchButtonClick}
+        cssCustom="mod-calendar-header-button mat-basic"
+        endIcon={<ArrowIcon flip={mode !== "day"} />}>
         {label}
-        <ArrowIcon flip={mode !== "day"} />
       </Button>
     );
   }
@@ -1371,8 +1373,8 @@ const CalendarArrow: FC = () => {
   }, [unsubscribe]);
   return (
     <div className="mod-calendar-arrow">
-      <MatArrow arrow="L" cssCustom="mod-hover" disabled={false} onClick={onArrowLeft} />
-      <MatArrow arrow="R" cssCustom="mod-hover" disabled={false} onClick={onArrowRight} />
+      <MatArrow arrow="L" cssCustom="mat-basic" disabled={false} onClick={onArrowLeft} />
+      <MatArrow arrow="R" cssCustom="mat-basic" disabled={false} onClick={onArrowRight} />
     </div>
   );
 };
@@ -1506,19 +1508,19 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
         <div className="mod-calendar-footer">
           {errorMode ? (
             <div className="mod-button-wrap">
-              <Button onClick={handleReset} cssCustom="mat-button-base mod-hover">
+              <Button onClick={handleReset} cssCustom="mat-basic">
                 {reset}
               </Button>
-              <Button onClick={handleFix} cssCustom="mat-button-base mat-flat">
+              <Button onClick={handleFix} cssCustom="mat-basic mat-flat">
                 {fix}
               </Button>
             </div>
           ) : (
             <div className="mod-button-wrap">
-              <Button onClick={coreHandleCancel} cssCustom="mat-button-base mod-hover">
+              <Button onClick={coreHandleCancel} cssCustom="mat-basic">
                 {cancel}
               </Button>
-              <Button onClick={coreHandleApply} cssCustom="mat-button-base mat-flat">
+              <Button onClick={coreHandleApply} cssCustom="mat-basic mat-flat">
                 {apply}
               </Button>
             </div>

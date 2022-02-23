@@ -36,6 +36,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
       openTo="day"
       minDate={new Date(2021, 0, 15)}
       maxDate={new Date(2029, 9, 15)}
+      error
       option={{
         weekday: "narrow",
         monthOption: { button: "long", calendar: "long" },
@@ -60,6 +61,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
         dateSeparator: "/",
         rangeSeparator: "-",
         datePlaceholder: { dd: "gg", mm: "mm", yyyy: "aaaa" },
+        readOnly: true,
       }}
     />
   );

@@ -13,11 +13,7 @@
 }
 
 .form-example {
-  display: flex;
-  flex-direction: column;
-}
-.form-example .mod-button {
-  width: 80px;
+  display: block;
 }
 
 .form-flex button {

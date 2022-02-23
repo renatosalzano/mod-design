@@ -17,6 +17,9 @@
   }
 }
 
+.mod-datepicker-theme {
+}
+
 .mod-inputdate-wrap {
   display: flex;
   align-items: center;
@@ -71,20 +74,16 @@
   align-items: center;
   padding: 16px 8px 8px 8px;
 
+  .mod-calendar-header-button {
+    width: unset;
+  }
+
   .mod-button {
     font .mod-arrow-icon {
       color: var(--idleColor);
     }
   }
-  .mod-calendar-header-button {
-    width: auto !important;
-    .mod-button-inner {
-      color: var(--calendarFontColor);
-      font-weight: 500;
-      font-family: var(--headerFont);
-      gap: 8px;
-    }
-  }
+
   .mod-calendar-arrow {
     display: flex;
   }
@@ -144,20 +143,20 @@
   height: 248px;
   --ms: 150ms;
   &.mod-translate-L {
-    animation: translateL var(--ms) ease-out forwards;
+    animation: translateL var(--ms) ease forwards;
   }
   &.mod-translate-R {
-    animation: translateR var(--ms) ease-out forwards;
+    animation: translateR var(--ms) ease forwards;
   }
   &.mod-translate-U {
     display: flex;
     flex-direction: column;
-    animation: translateU var(--ms) ease-out forwards;
+    animation: translateU var(--ms) ease forwards;
   }
   &.mod-translate-D {
     display: flex;
     flex-direction: column;
-    animation: translateD var(--ms) ease-out forwards;
+    animation: translateD var(--ms) ease forwards;
   }
 }
 
@@ -247,30 +246,34 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
-  background-color: var(--hoverColor);
-
+  background-color: var(--color);
   .mod-calendar-tab {
     overflow: hidden;
-    display: block;
-    border-radius: 0;
-    width: 50%;
-    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border: none;
+    outline: none;
+    background-color: transparent;
     font-size: 11px;
+    font-weight: 500;
+    font-family: var(--contentFont);
     letter-spacing: 2px;
     text-transform: uppercase;
     transition: all 150ms ease-out;
-    color: var(--hoverColor);
+    color: var(--fontColorSecondary);
     z-index: 2000;
+    cursor: pointer;
     &.mod-idle-tab {
-      color: var(--idleColor);
-      opacity: 0.6;
+      color: var(--hoverColor);
+      opacity: 0.4;
       &:hover {
-        color: var(--color);
+        color: var(--fontColorSecondary);
         opacity: 0.8;
       }
     }
     &.mod-active-tab {
-      color: var(--color);
+      color: var(--fontColorSecondary);
       z-index: 3000;
     }
     &.mod-full-tab {
@@ -285,13 +288,14 @@
 }
 .mod-bar-date {
   padding: 8px 16px;
-  color: var(--calendarFontColor);
   font-family: "Roboto Mono", monospace;
   font-size: 18px;
-  font-weight: 300;
+  font-weight: 400;
   text-transform: capitalize;
-  color: var(--calendarFontColor);
-  background-color: var(--hoverColor);
+  pointer-events: none;
+  user-select: none;
+  color: var(--fontColorSecondary);
+  background-color: var(--color);
 }
 
 .mod-calendar-range-placeholder {

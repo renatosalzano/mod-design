@@ -20,7 +20,8 @@ const Form = () => {
       <CtrlDatePickerRange name="range" />
       {/* <CtrlDatePickerJS /> */}
       {/* <CtrlSelect /> */}
-      <Button onClick={() => null} cssCustom="mat-basic raised">
+      
+      <Button onClick={() => null} raised matBasic>
         Ripple
       </Button>
     </div>

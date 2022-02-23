@@ -414,7 +414,7 @@ const ModInputDateRange: FC<InputDateRangeProps> = ({
         onChange={handleMinChange}
         onSpaceDown={onSpaceDown}
       />
-      {rangeSeparator && <div className="mod-inputdate-separator">{rangeSeparator}</div>}
+      {rangeSeparator && <div className="mod-input-date-separator">{rangeSeparator}</div>}
       <ModInputDate
         rangeType="end"
         date={end}
@@ -663,7 +663,7 @@ const ModInputDate: FC<InputDateProps> = ({
   function setClassName() {
     let classname = "mod-inputdate";
     if (focus) classname += " mod-focus";
-    if (readonly) classname += "mod-readonly";
+    if (readonly) classname += " mod-readonly";
     if (disabled) classname += " mod-disabled";
     return classname;
   }

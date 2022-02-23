@@ -7,14 +7,16 @@
     display: flex;
     padding: 0 8px;
     cursor: default;
-    .mod-input-date-separator {
-      color: var(--fontColor);
-    }
   }
 }
 
+.mod-input-date-separator {
+  user-select: none !important;
+  color: var(--fontColor);
+}
+
 .mod-input-core {
-  position: relative !important;
+  position: relative;
   user-select: none !important;
   position: relative;
   box-sizing: content-box;
