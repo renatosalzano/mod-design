@@ -69,6 +69,7 @@ export const Button: FC<CoreButton> = memo(
   }) => {
     const [ripples, setRipples] = useState<ReactNode[]>([]);
     const [shadow, setShadow] = useState<"idle" | "blur">("idle");
+    const isInside = useRef(false);
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     const endRipple = useRef(() => null);
@@ -95,6 +96,7 @@ export const Button: FC<CoreButton> = memo(
         const key = new Date().getMilliseconds() + Math.random();
         setRipples([...ripples, <RippleEffect key={key} {...props} />]);
         setShadow("blur");
+        isInside.current = true;
       },
       [debounce, disableRipple, ripples],
     );
@@ -104,7 +106,10 @@ export const Button: FC<CoreButton> = memo(
       setShadow("idle");
       endRipple.current();
       debounce.debounce(() => setRipples([]), 800);
-      onClick();
+      if (isInside.current) {
+        onClick();
+        isInside.current = false;
+      }
     };
 
     const handleMouseLeave = () => {
@@ -112,6 +117,7 @@ export const Button: FC<CoreButton> = memo(
       setShadow("idle");
       endRipple.current();
       debounce.debounce(() => setRipples([]), 800);
+      isInside.current = false;
     };
 
     const handleTouch = () => {
