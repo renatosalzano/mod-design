@@ -22,7 +22,6 @@ const CtrlDatePickerRange: FC = () => {
       name="DATEPICKER RANGE TEST"
       value={dateRange}
       onChange={handleDateRange}
-      openTo="year"
       minDate={new Date(2021, 0, 15)}
       maxDate={new Date(2029, 9, 15)}
       option={{

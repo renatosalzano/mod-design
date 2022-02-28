@@ -341,7 +341,6 @@ const DatePicker: FC<Props> = ({
     init() {
       this.prevValue = clone(this.value, this.range);
       setStateValue(this.value);
-      this.log();
     },
     handleInputValue(value: any) {
       const { startDate, endDate, mustBeLessThan, mustBeGreaterThan } = localization;
@@ -451,7 +450,6 @@ const DatePicker: FC<Props> = ({
     },
     handleApply(value: any) {
       this.handleChange(value);
-      this.log();
     },
     handleCancel() {
       setStateValue(this.prevValue);
