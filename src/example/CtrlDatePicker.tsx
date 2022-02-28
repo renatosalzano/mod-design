@@ -1,10 +1,6 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useState } from "react";
 import { DatePicker } from "../mod-design/core";
 
-type RangeDate = {
-  min: Date | null;
-  max: Date | null;
-};
 const CtrlDatePicker: FC = () => {
   const [date, setDate] = useState<Date | null>(new Date());
 

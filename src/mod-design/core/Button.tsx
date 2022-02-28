@@ -1,7 +1,6 @@
 import {
   FC,
   KeyboardEvent,
-  memo,
   MouseEvent,
   MutableRefObject,
   ReactNode,

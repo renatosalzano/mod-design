@@ -102,15 +102,6 @@ const ModuleCore: FC<CoreProps> = ({
 };
 export { ModuleCore };
 
-interface Props {
-  className?: string;
-  color?: "main" | "warning" | "error" | "success";
-  themeColor?: string;
-  focused?: boolean;
-  disabled?: boolean;
-  error?: boolean;
-}
-
 interface ModuleCoreArgs {
   focused?: boolean;
   disabled?: boolean;

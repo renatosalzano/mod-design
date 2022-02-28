@@ -9,8 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { DateRange, isValidRange, toDateRange } from "../utils/DateRange";
-import { DateX, indexToDateX, preventDayOverflow, toDate, toDateX } from "../utils/DateX";
+import { DateX, preventDayOverflow } from "../utils/DateX";
 import { CoreProps, ModuleCore, useModuleCore } from "./ModuleCore";
 import "./SCSS/mod-core-inputdate.scss";
 
@@ -102,8 +101,6 @@ const InputDate: FC<Props> = ({
     disabled: disabled,
     error: error,
   });
-
-  const [forceUpdate, setForceUpdate] = useState(false);
 
   const inputData = useRef<InputData>({
     range,
@@ -1079,8 +1076,3 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
     </span>
   );
 };
-
-function isDate(value: any) {
-  if (value instanceof Date) return value;
-  return null;
-}
