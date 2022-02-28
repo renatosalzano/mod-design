@@ -14,13 +14,11 @@ const CtrlDatePicker: FC = () => {
       name="DATEPICKER TEST"
       value={date}
       onChange={handleDate}
-      openTo="year"
       minDate={new Date(2024, 1, 8)}
       maxDate={new Date(2028, 0, 15)}
       dateFormat="D/M/Y"
       option={{
         weekday: "narrow",
-        headerButton: "2-button",
         monthOption: { button: "short", calendar: "long" },
       }}
       localization={{

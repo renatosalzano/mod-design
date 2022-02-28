@@ -390,13 +390,11 @@ const DatePicker: FC<Props> = ({
           switch (date.compareInRange(this.minDate, this.maxDate)) {
             case "less min":
               this.value = null;
-              this.handleChange(null);
               setStateValue(date);
               this.handleError(true, `${mustBeGreaterThan} ${this.localMinDate}`);
               break;
             case "greater max":
               this.value = null;
-              this.handleChange(null);
               setStateValue(date);
               this.handleError(true, `${mustBeLessThan} ${this.localMaxDate}`);
               break;
@@ -406,7 +404,6 @@ const DatePicker: FC<Props> = ({
           }
         } else {
           // DATE = NULL
-          console.log("DATE NULL");
 
           this.handleError(false);
           this.handleChange(null);
@@ -456,6 +453,7 @@ const DatePicker: FC<Props> = ({
     },
     handleFix() {
       this.handleClose(true);
+      console.log(this.prevValue);
       this.handleChange(clone(this.prevValue, this.range));
 
       setTimeout(() => {

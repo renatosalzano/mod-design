@@ -143,7 +143,6 @@ const InputDate: FC<Props> = ({
       setFocus();
     },
     handleChange(value) {
-      console.log("HANDLE CHANGE", value);
       switch (returnType) {
         case "date-string":
           const output = this.toDateString(value);
@@ -758,7 +757,6 @@ const Input: FC<InputProps> = ({ type, value, index, pad = 2, disabled, readonly
           break;
       }
       this.value = "";
-      this.log();
     },
     notDigit(value) {
       if (value === "" || /^\d+$/.test(value)) return false;
