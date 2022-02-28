@@ -1,7 +1,7 @@
 import { FC } from "react";
-import { PropColor } from "./ModuleCore";
+import { CoreColor } from "./ModuleCore";
 interface Props {
-  color?: PropColor;
+  color?: CoreColor;
   focused?: boolean;
   disabled?: boolean;
   children: string | string[];

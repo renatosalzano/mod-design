@@ -23,7 +23,7 @@ import {
 } from "react";
 import { CloseIcon, FilterIcon } from "../icons";
 import FatFilterIcon from "../icon/FatFilterIcon";
-import { useModuleCore } from "./hook/useModuleCore";
+import { useModuleCore } from "./ModuleCore";
 import { SetOption } from "./interfaces/select";
 import { CoreProps, ModuleCore } from "./ModuleCore";
 import "./SCSS/mod-core-select.scss";
@@ -73,13 +73,7 @@ const Select: FC<Props> = ({
   onChange,
   setOption,
 }) => {
-  const { internalError } = useHandleError(
-    name,
-    value,
-    setOption,
-    multiple,
-    options,
-  );
+  const { internalError } = useHandleError(name, value, setOption, multiple, options);
   const [filterOptionType, setFilterOption] = useState<FilterOpt>("off");
   const [renderData, setRenderData] = useState<RenderData>({
     input: "",
@@ -100,7 +94,7 @@ const Select: FC<Props> = ({
     setRenderData,
   });
 
-  const { isFocused, isDisabled } = useModuleCore({
+  const { isFocus, isDisabled } = useModuleCore({
     focused: core.dropdown || focused,
     disabled: disabled,
   });
@@ -150,11 +144,11 @@ const Select: FC<Props> = ({
   return (
     <SelectCore {...core}>
       <ModuleCore
-        focused={isFocused}
+        focused={isFocus}
         disabled={isDisabled}
         error={error || internalError}
         helperText={internalError ? "INTERNAL ERROR" : helperText}
-        cssCustom="mod-select"
+        className="mod-select"
         border>
         {/* <Chips /> */}
         <InputText name={name} value={renderData.input} onTouch={handleTouch} />
@@ -190,11 +184,7 @@ type IndexChip = {
   [key: number]: { deleteChip: (value: string, index: number) => void };
 };
 
-type HandleOptionClick = (
-  optionLabel: string,
-  optionValue: any,
-  optionIndex: number,
-) => void;
+type HandleOptionClick = (optionLabel: string, optionValue: any, optionIndex: number) => void;
 
 interface SelectEngine {
   name: string;
@@ -443,9 +433,7 @@ const useSelectEngine: UseSelectEngine = ({
     }
   };
   const newOption = (label: string, value: any, index: number) => {
-    return (
-      <Option key={label + index} label={label} value={value} index={index} />
-    );
+    return <Option key={label + index} label={label} value={value} index={index} />;
   };
   const update = useRef((options: any[], check = true) => {
     const optionEle: RE[] = [];
@@ -514,11 +502,7 @@ const SelectCore: FC<SelectStore> = (props) => {
     delete providerProps.children;
     return providerProps;
   }
-  return createElement(
-    SelectContext.Provider,
-    { value: omit(props) },
-    props.children,
-  );
+  return createElement(SelectContext.Provider, { value: omit(props) }, props.children);
 };
 
 /* 
@@ -533,13 +517,7 @@ interface InputProps {
   endIcon?: RE;
   onTouch: () => void;
 }
-const InputText: FC<InputProps> = ({
-  name,
-  value = "",
-  disabled,
-  endIcon,
-  onTouch,
-}) => {
+const InputText: FC<InputProps> = ({ name, value = "", disabled, endIcon, onTouch }) => {
   const { dropdown, handleInputClick, handleKeydown } = useSelectCore();
   const handleClick = () => {
     if (disabled) return;
@@ -675,9 +653,7 @@ const SelectList: FC<ListProps> = ({ filterOption }) => {
     <div className="mod-drop-down-container">
       {dropdown && (
         <ul className="mod-list">
-          {filterOption !== "off" && (
-            <InputFilter filterOption={filterOption} />
-          )}
+          {filterOption !== "off" && <InputFilter filterOption={filterOption} />}
           <div className="mod-scroll-containter" ref={modList}>
             {optionList}
           </div>
@@ -770,11 +746,7 @@ const Option: FC<OptionProps> = ({ label, value, index }) => {
   }, [unsbuscribe]);
 
   return (
-    <OptionWrap
-      optionRef={ref}
-      active={active}
-      selected={selected}
-      onClick={handleClick}>
+    <OptionWrap optionRef={ref} active={active} selected={selected} onClick={handleClick}>
       <OptionLabel label={label} />
     </OptionWrap>
   );
@@ -786,13 +758,7 @@ interface OptionWrapProps {
   selected: boolean;
   onClick: () => void;
 }
-const OptionWrap: FC<OptionWrapProps> = ({
-  optionRef,
-  active,
-  selected,
-  onClick,
-  children,
-}) => {
+const OptionWrap: FC<OptionWrapProps> = ({ optionRef, active, selected, onClick, children }) => {
   function setOptionClass() {
     let className = "mod-option";
     if (active) className += " mod-active";
@@ -822,12 +788,7 @@ const OptionLabel: FC<OptionLabelProps> = memo(({ label }) => {
     }
     return label;
   }
-  return (
-    <div
-      className="mod-option-label"
-      dangerouslySetInnerHTML={{ __html: renderLabel() }}
-    />
-  );
+  return <div className="mod-option-label" dangerouslySetInnerHTML={{ __html: renderLabel() }} />;
 });
 
 interface DisabledOptionProps {
@@ -926,20 +887,15 @@ const useHandleError = (
         const { label, value } = setOption(options[0]);
         const labelType = typeof label;
         if (labelType !== "string") {
-          const labelBody = fn
-            .substring(fn.indexOf(":") + 1, fn.indexOf(","))
-            .trim();
+          const labelBody = fn.substring(fn.indexOf(":") + 1, fn.indexOf(",")).trim();
           _error += setOptionErr.label(labelType, labelBody);
         }
         if (value === undefined) {
-          const valueBody = fn
-            .substring(fn.lastIndexOf(":") + 1, fn.lastIndexOf("}"))
-            .trim();
+          const valueBody = fn.substring(fn.lastIndexOf(":") + 1, fn.lastIndexOf("}")).trim();
           _error += setOptionErr.value(valueBody);
         }
         if (_error) {
-          _error =
-            "\tERROR: <Select setOption={(option) => {\n" + _error + "}} />\n";
+          _error = "\tERROR: <Select setOption={(option) => {\n" + _error + "}} />\n";
           error += _error;
         }
       }

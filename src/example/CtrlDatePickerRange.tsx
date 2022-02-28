@@ -1,26 +1,15 @@
 import { FC, useState } from "react";
 import { DatePicker } from "../mod-design/core";
 
-interface Props {
-  name: string;
-}
-
 type RangeDate = {
   start: Date | null;
   end: Date | null;
 };
-const CtrlDatePickerRange: FC<Props> = ({ name }) => {
+const CtrlDatePickerRange: FC = () => {
   const [dateRange, setDateRange] = useState<RangeDate>({
-    start: new Date(2022, 0, 12),
-    end: new Date(2025, 10, 20),
+    start: null,
+    end: null,
   });
-
-  function toString(value: RangeDate) {
-    let str = "";
-    value.start ? (str += ` min: ${value.start.toLocaleDateString()}`) : (str += " null");
-    value.end ? (str += ` max: ${value.end.toLocaleDateString()}`) : (str += " null");
-    return str;
-  }
 
   function handleDateRange(value: RangeDate) {
     console.log("CURRENT VALUE", value);
@@ -29,14 +18,13 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
 
   return (
     <DatePicker
-      range
+      range="2-calendar"
       name="DATEPICKER RANGE TEST"
       value={dateRange}
       onChange={handleDateRange}
-      openTo="day"
+      openTo="year"
       minDate={new Date(2021, 0, 15)}
       maxDate={new Date(2029, 9, 15)}
-      error
       option={{
         weekday: "narrow",
         monthOption: { button: "long", calendar: "long" },
@@ -61,7 +49,7 @@ const CtrlDatePickerRange: FC<Props> = ({ name }) => {
         dateSeparator: "/",
         rangeSeparator: "-",
         datePlaceholder: { dd: "gg", mm: "mm", yyyy: "aaaa" },
-        readOnly: true,
+        readOnly: false,
       }}
     />
   );

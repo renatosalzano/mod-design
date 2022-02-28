@@ -2,11 +2,13 @@
 
 .mod-theme {
   --fontColor: #000000de;
-  --fontColorSecondary: #ffffffde;
+  --fontColorSecondary: #ffffff;
   --idleColor: #757575;
   --mainColor: #0277bd;
-  --successColor: green;
-  --warningColor: yellow;
+  --primaryColor: #0277bd;
+  --accentColor: hsl(36, 100%, 50%);
+  --successColor: #66bb6a;
+  --warnColor: #ffd740;
   --errorColor: #f44336;
   --hoverColor: #eeeeee;
   --disabledColor: rgba(48, 48, 48, 0.25);
@@ -19,7 +21,7 @@
   --idleColor: #d5dae4d3;
   --mainColor: #29b6f6;
   --successColor: green;
-  --warningColor: yellow;
+  --warnColor: yellow;
   --errorColor: #f44336;
   --hoverColor: rgba(230, 235, 240, 0.1);
   --disabledColor: rgba(231, 231, 231, 0.25);
@@ -50,8 +52,8 @@
   &.mod-success {
     --color: var(--successColor);
   }
-  &.mod-warning {
-    --color: var(--warningColor);
+  &.mod-warn {
+    --color: var(--warnColor);
   }
   &.mod-error,
   &.error {

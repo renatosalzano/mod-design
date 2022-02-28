@@ -59,6 +59,7 @@ interface InputData {
   lenght: number;
   active: number;
   scrollIndex: number;
+  status: "filled" | "unfilled" | "null";
   rangeStatus: RangeStatus;
   rangeError: boolean;
   returnType: "date" | "date-string";
@@ -67,12 +68,10 @@ interface InputData {
   scrollActive(scroll: 1 | -1, currIndex: number): void;
   focus(index?: number): void;
   handleChange<T extends Value>(value: T): void;
-  handleBlur(): void;
   subscribe(index: number, setter: InputSetter): void;
   unsubscribe(index: number): void;
   setValue(value: any): void;
-  setRangeStatus(range: "start" | "end", status: InputStatus): void;
-  setRangeValue(type: "start" | "end", value: Date | null): void;
+  setStatus(status: InputStatus, range?: "start" | "end"): void;
   toDateString(value: any): string | { start: string; end: string };
   set: { [key: number]: InputSetter };
 }
@@ -104,25 +103,34 @@ const InputDate: FC<Props> = ({
     error: error,
   });
 
+  const [forceUpdate, setForceUpdate] = useState(false);
+
   const inputData = useRef<InputData>({
     range,
     value,
     lenght: range ? 5 : 2,
     active: -1,
     scrollIndex: 0,
+    status: "null",
     rangeStatus: { start: "null", end: "null" },
     rangeValue: { start: null, end: null },
     rangeError: false,
     returnType,
     update(value) {
       if (this.range) {
-        /* ----- RANGE */
+        // DATE RANGE
         const { start, end } = clone(value, true);
         if (start) this.rangeStatus.start = "filled";
         if (end) this.rangeStatus.end = "filled";
         this.rangeValue = clone(value, true);
       } else {
-        /* ----- NOT RANGE */
+        // DATE
+        if (value) {
+          this.status = "filled";
+        } else {
+          this.status = "null";
+        }
+        this.value = clone(value, false);
       }
     },
     scrollActive(scroll: 1 | -1, currIndex: number) {
@@ -138,6 +146,7 @@ const InputDate: FC<Props> = ({
       setFocus();
     },
     handleChange(value) {
+      console.log("HANDLE CHANGE", value);
       switch (returnType) {
         case "date-string":
           const output = this.toDateString(value);
@@ -159,20 +168,12 @@ const InputDate: FC<Props> = ({
     setValue(value) {
       this.value = value;
     },
-    setRangeStatus(range, status) {
-      this.rangeStatus[range] = status;
-    },
-    setRangeValue(type: "start" | "end", value: Date | null) {},
-    handleBlur() {
-      if (this.range) {
-        if (this.rangeStatus.start === "unfilled" || this.rangeStatus.end === "unfilled") {
-          this.handleChange(this.value);
-        }
+    setStatus(status, range) {
+      if (range) {
+        this.rangeStatus[range] = status;
       } else {
-        /* NOT RANGE */
+        this.status = status;
       }
-
-      setBlur();
     },
     subscribe(index, setter) {
       this.set[index] = setter;
@@ -206,11 +207,11 @@ const InputDate: FC<Props> = ({
     [inputData],
   );
 
-  const handleTrigger = useCallback(() => inputData.handleBlur(), [inputData]);
+  const handleTrigger = useCallback(() => setBlur(), [setBlur]);
 
   return (
     <ModuleCore
-      cssCustom="mod-inputdate-core"
+      className="mod-inputdate-core"
       focused={isFocus}
       error={isError}
       disabled={isDisabled}
@@ -240,7 +241,7 @@ const InputDate: FC<Props> = ({
           />
         ) : (
           <ModInputDate
-            date={isDate(value)}
+            date={value as Date | null}
             minDate={minDate}
             maxDate={maxDate}
             disabled={disabled}
@@ -454,7 +455,7 @@ interface StateData {
   dayInMonth: number;
   dateIndex: { year: number; month: number; day: number };
   status: "null" | "filled" | "unfilled";
-  update(value: DateX | null, minDate: Date | null, maxDate: Date | null): void;
+  update(value: Date | null, minDate: Date | null, maxDate: Date | null): void;
   updateFilled(date: DateX): void;
   renderDate(y?: string | null, m?: string | null, d?: string | null): void;
   checkNaN(): "null" | "filled" | "unfilled";
@@ -464,12 +465,10 @@ interface StateData {
   setMonth(month: number): void;
   setDay(day: number): void;
   cancel(type: "Y" | "M" | "D"): void;
-  increment(type: "Y" | "M" | "D"): void;
-  decrement(type: "Y" | "M" | "D"): void;
   getDayInMonth(): { max: number; maxFristDigit: number };
 }
 const ModInputDate: FC<InputDateProps> = ({
-  rangeType = "start",
+  rangeType,
   date,
   minDate,
   maxDate,
@@ -518,7 +517,7 @@ const ModInputDate: FC<InputDateProps> = ({
       this.dateIndex = date.getIndexDate();
       const { year, month, day } = date.toObjectDigit();
       this.renderDate(year, month, day);
-      inputData.setRangeStatus(rangeType, "filled");
+      inputData.setStatus("filled", rangeType);
     },
     renderDate(y, m, d) {
       if (y) renderY(y);
@@ -529,13 +528,13 @@ const ModInputDate: FC<InputDateProps> = ({
       const { year, month, day } = this.dateIndex;
       switch (true) {
         case isNaN(year) && isNaN(month) && isNaN(day):
-          inputData.setRangeStatus(rangeType, "null");
+          inputData.setStatus("null", rangeType);
           return "null";
         case isNaN(year) || isNaN(month) || isNaN(day):
-          inputData.setRangeStatus(rangeType, "unfilled");
+          inputData.setStatus("unfilled", rangeType);
           return "unfilled";
         default:
-          inputData.setRangeStatus(rangeType, "filled");
+          inputData.setStatus("filled", rangeType);
           return "filled";
       }
     },
@@ -612,12 +611,10 @@ const ModInputDate: FC<InputDateProps> = ({
           this.status = "unfilled";
       }
     },
-    increment(type: "Y" | "M" | "D") {},
-    decrement(type: "Y" | "M" | "D") {},
   }).current;
 
   useEffect(() => {
-    stateData.update(toDateX(date), minDate, maxDate);
+    stateData.update(date, minDate, maxDate);
   }, [date, maxDate, minDate, stateData]);
 
   const input = {

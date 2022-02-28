@@ -4,7 +4,6 @@ import {
   Dispatch,
   FC,
   Fragment,
-  JSXElementConstructor,
   memo,
   MutableRefObject,
   ReactElement,
@@ -16,8 +15,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { CoreProps, ModuleCore, useModuleCore } from "./ModuleCore";
-import { Button, MatArrow } from "./Button";
+import { CoreProps, ModuleCore, useCore, useModuleCore } from "./ModuleCore";
+import Button from "./Button";
 import InputDate from "./InputDate";
 import { ArrowIcon, CalendarIcon } from "../icons";
 import "./SCSS/mod-core-datepicker.scss";
@@ -26,6 +25,7 @@ import { checkRange, checkIsRange, toRange } from "../utils/DateRange";
 import { DateX, isEqualDate, testLocale } from "../utils/DateX";
 import { usePrevious } from "../utils/usePrevious";
 import { ClickInRange } from "../utils/useDebounce";
+import MatArrowIcon from "../icon/MatArrowIcon";
 
 type RangeType = "start" | "end";
 type RE = ReactElement;
@@ -114,7 +114,7 @@ interface Props extends CoreProps {
   actionButton?: boolean;
   inputProps?: InputProps;
   /**
-   * Disable scroll animation.
+   * Disable css animation.
    */
   disableAnimation?: boolean;
   onChange:
@@ -378,7 +378,6 @@ const DatePicker: FC<Props> = ({
           this.handleError(true, errorMessage);
           this.value = { start: null, end: null };
           setStateValue(rangeDate);
-          this.log();
         } else {
           this.handleError(false);
           this.handleChange(rangeDate);
@@ -391,10 +390,14 @@ const DatePicker: FC<Props> = ({
         if (date instanceof DateX) {
           switch (date.compareInRange(this.minDate, this.maxDate)) {
             case "less min":
+              this.value = null;
+              this.handleChange(null);
               setStateValue(date);
               this.handleError(true, `${mustBeGreaterThan} ${this.localMinDate}`);
               break;
             case "greater max":
+              this.value = null;
+              this.handleChange(null);
               setStateValue(date);
               this.handleError(true, `${mustBeLessThan} ${this.localMaxDate}`);
               break;
@@ -402,6 +405,12 @@ const DatePicker: FC<Props> = ({
               this.handleError(false);
               this.handleChange(date);
           }
+        } else {
+          // DATE = NULL
+          console.log("DATE NULL");
+
+          this.handleError(false);
+          this.handleChange(null);
         }
       }
     },
@@ -463,7 +472,6 @@ const DatePicker: FC<Props> = ({
       setStateValue(value);
       onChange(value);
       this.prevValue = clone(value, this.range);
-      this.log();
     },
     handleSelector(value: any) {
       setStateValue(value);
@@ -523,7 +531,7 @@ const DatePicker: FC<Props> = ({
 
   return (
     <ModuleCore
-      cssCustom={setClassName()}
+      className={setClassName()}
       themeColor={themeColor}
       focused={isFocus}
       error={isError}
@@ -560,6 +568,7 @@ const DatePicker: FC<Props> = ({
             dateFormat={dateFormat}
             inputProps={inputProps}
             themeColor={themeColor}
+            dropdown={dropdown}
             onIconClick={() => setDropdown(true)}
             onIconTouch={handleTouch}
             onSpaceDown={() => setDropdown(true)}
@@ -718,6 +727,7 @@ interface DatePickerInputProps {
   range?: boolean | "2-calendar";
   error: boolean;
   themeColor?: string;
+  dropdown: boolean;
   onIconClick: () => void;
   onIconTouch: () => void;
   onSpaceDown: () => void;
@@ -732,6 +742,7 @@ const DatePickerInput: FC<DatePickerInputProps> = ({
   error,
   inputProps,
   themeColor,
+  dropdown,
   onIconClick,
   onIconTouch,
   onSpaceDown,
@@ -756,22 +767,39 @@ const DatePickerInput: FC<DatePickerInputProps> = ({
         themeColor={themeColor}
         skipCheck
       />
-      <DatePickerIcon onIconClick={onIconClick} onIconTouch={onIconTouch} />
+      <DatePickerIcon active={dropdown} onIconClick={onIconClick} onIconTouch={onIconTouch} />
     </div>
   );
 };
 interface DatePickerIconProps {
+  active: boolean;
   calendarIcon?: RE;
   onIconClick: () => void;
   onIconTouch: () => void;
 }
-const DatePickerIcon: FC<DatePickerIconProps> = ({ calendarIcon, onIconClick, onIconTouch }) => {
+const DatePickerIcon: FC<DatePickerIconProps> = ({
+  calendarIcon,
+  active,
+  onIconClick,
+  onIconTouch,
+}) => {
+  const { color } = useCore();
   function render() {
     if (calendarIcon) return calendarIcon;
     return <CalendarIcon />;
   }
+  function setClassName() {
+    let classname = "mod-datepicker-icon";
+    if (active) classname += " mod-active";
+    return classname;
+  }
   return (
-    <Button matIcon cssCustom="mod-datepicker-icon" onClick={onIconClick} onTouch={onIconTouch}>
+    <Button
+      matIcon
+      className={setClassName()}
+      color={color}
+      onClick={onIconClick}
+      onTouch={onIconTouch}>
       {render()}
     </Button>
   );
@@ -946,11 +974,10 @@ const CalendarRange: FC<CalendarRangeProps> = ({
   }, [closeDropdown, handleCancel]);
 
   const onApply = useCallback(() => {
-    if (!validRange) return;
     const value: any = { start, end };
     handleApply({ ...value });
     closeDropdown();
-  }, [validRange, start, end, handleApply, closeDropdown]);
+  }, [start, end, handleApply, closeDropdown]);
 
   const onReset = useCallback(() => {
     handleReset();
@@ -1171,6 +1198,8 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
     localization: { apply, cancel, fix },
     errorMode,
   } = useGetConst();
+  const { color } = useCore();
+
   function setClassName() {
     let classname = "mod-calendar-footer range";
     if (range === "2-calendar") classname += "-double";
@@ -1181,19 +1210,19 @@ const CalendarRangeFooter: FC<CalendarRangeFooterProps> = ({
     <div className={setClassName()}>
       {!errorMode ? (
         <div className="mod-button-wrap">
-          <Button onClick={handleCancel} cssCustom="mat-basic">
+          <Button matBasic color="basic" onClick={handleCancel}>
             {cancel}
           </Button>
-          <Button onClick={handleApply} cssCustom="mat-flat" disabled={!validRange}>
+          <Button matFlat color={color} onClick={handleApply} disabled={!validRange}>
             {apply}
           </Button>
         </div>
       ) : (
         <div className="mod-button-wrap">
-          <Button onClick={handleReset} cssCustom="mat-basic">
+          <Button matBasic color="basic" onClick={handleReset}>
             Reset
           </Button>
-          <Button onClick={handleFix} cssCustom="mat-flat">
+          <Button matFlat color={color} onClick={handleFix}>
             {fix}
           </Button>
         </div>
@@ -1322,11 +1351,19 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     if (monthButton && mode === "day") {
       return (
         <div className="mod-button-wrap">
-          <Button matBasic onClick={onMonthButtonClick} cssCustom="mod-calendar-header-button">
+          <Button
+            matBasic
+            color="basic"
+            onClick={onMonthButtonClick}
+            className="mod-calendar-header-button">
             {split(label)[0]}
             <ArrowIcon />
           </Button>
-          <Button matBasic cssCustom="mod-calendar-header-button" onClick={onYearButtonClick}>
+          <Button
+            matBasic
+            color="basic"
+            className="mod-calendar-header-button"
+            onClick={onYearButtonClick}>
             {split(label)[1]}
             <ArrowIcon />
           </Button>
@@ -1336,8 +1373,9 @@ const CalendarModeButton: FC<CalendarContentProps> = ({ mode }) => {
     return (
       <Button
         matBasic
+        color="basic"
         onClick={onSwitchButtonClick}
-        cssCustom="mod-calendar-header-button"
+        className="mod-calendar-header-button"
         endIcon={<ArrowIcon flip={mode !== "day"} />}>
         {label}
       </Button>
@@ -1374,8 +1412,22 @@ const CalendarArrow: FC = () => {
   }, [unsubscribe]);
   return (
     <div className="mod-calendar-arrow">
-      <MatArrow arrow="L" cssCustom="mat-basic" disabled={false} onClick={onArrowLeft} />
-      <MatArrow arrow="R" cssCustom="mat-basic" disabled={false} onClick={onArrowRight} />
+      <Button
+        matBasic
+        color="basic"
+        className="mod-calendar-header-arrow"
+        disabled={false}
+        onClick={onArrowLeft}>
+        <MatArrowIcon left />
+      </Button>
+      <Button
+        matBasic
+        color="basic"
+        className="mod-calendar-header-arrow"
+        disabled={false}
+        onClick={onArrowRight}>
+        <MatArrowIcon right />
+      </Button>
     </div>
   );
 };
@@ -1387,11 +1439,11 @@ const CalendarArrow: FC = () => {
 
 const CalendarSeparator: FC<CalendarContentProps> = ({ mode }) => {
   const { weekday } = useGetConst();
-  function render() {
-    if (mode === "day") return weekday;
-    return null;
+  function setClassName() {
+    if (mode === "day") return " mod-show-weekday";
+    return " mod-hide-weekday";
   }
-  return <div className="mod-calendar-separator">{render()}</div>;
+  return <div className={`mod-calendar-separator ${setClassName()}`}>{weekday}</div>;
 };
 const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
   const { monthOption, disableAnimation } = useGetConst();
@@ -1410,7 +1462,7 @@ const CalendarContent: FC<CalendarContentProps> = ({ mode }) => {
     contentTransition.subscribe((direction) => {
       if (disableAnimation) return;
       setTransition(direction);
-      if (test.clickInRange(250)) {
+      if (test.clickInRange(200)) {
         setTransition("idle");
       } else {
         setTimeout(() => setTransition("idle"), 150);
@@ -1502,6 +1554,7 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
     handleReset,
   } = useGetConst();
   const { coreHandleCancel, coreHandleApply } = useCalendarCore();
+  const { color } = useCore();
 
   return (
     <Fragment>
@@ -1509,19 +1562,19 @@ const CalendarFooter: FC<CalendarFooterProps> = ({ actionButton }) => {
         <div className="mod-calendar-footer">
           {errorMode ? (
             <div className="mod-button-wrap">
-              <Button matBasic onClick={handleReset}>
+              <Button matBasic color="basic" onClick={handleReset}>
                 {reset}
               </Button>
-              <Button matFlat onClick={handleFix}>
+              <Button matFlat color={color} onClick={handleFix}>
                 {fix}
               </Button>
             </div>
           ) : (
             <div className="mod-button-wrap">
-              <Button matBasic onClick={coreHandleCancel}>
+              <Button matBasic color="basic" onClick={coreHandleCancel}>
                 {cancel}
               </Button>
-              <Button matFlat onClick={coreHandleApply}>
+              <Button matFlat color={color} onClick={coreHandleApply}>
                 {apply}
               </Button>
             </div>
@@ -1657,8 +1710,9 @@ interface SelectorData {
     start: { year: string; month: string; day: string };
     end: { year: string; month: string; day: string };
   };
-  init(date: Date | null, rangeType: RangeType): void;
+  init(date: DateX, rangeType: RangeType, skipDay?: "skipDay"): void;
   set(type: Mode, index: string): SelectorSetter;
+  updateSelector(prev: string, index: string, date: Date): void;
   toggleActive(type: Mode, prev: string, index: string): void;
   initActive(type: Mode, index: string): boolean;
   isToday(type: Mode, index: string): boolean;
@@ -1877,14 +1931,21 @@ const CalendarCore: FC<CalendarCoreProps> = ({
       start: { year: "", month: "", day: "" },
       end: { year: "", month: "", day: "" },
     },
-    init(date, rangeType) {
+    init(date, rangeType, skipDay) {
       this.rangeType = rangeType;
-      if (date) {
-        const dateX = new DateX(date);
-        this[rangeType] = dateX.toStringIndex();
-        this.prev[rangeType] = dateX.toStringIndex();
+      if (!skipDay) {
+        this[rangeType] = date.toStringIndex();
+        this.prev[rangeType] = date.toStringIndex();
+      } else {
+        const { month, year } = date.toStringIndex();
+        this[rangeType] = { year, month, day: "" };
       }
       this.today = new DateX().toStringIndex();
+    },
+    updateSelector(prev, index, date) {
+      this.toggleActive("day", prev, index);
+      const dateX = new DateX(date);
+      this[rangeType] = dateX.toStringIndex();
     },
     initActive(type, index) {
       return this[this.rangeType][type] === index;
@@ -1902,6 +1963,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
       if (this.set(type, prev)) this.set(type, prev).idle();
       this[this.rangeType][type] = index;
       this.set(type, index).active();
+      if (type === "day") {
+      }
     },
     subscribe(type, index, setter) {
       this.setter[this.rangeType][type][index] = setter;
@@ -2065,9 +2128,9 @@ const CalendarCore: FC<CalendarCoreProps> = ({
   };
   const init = useRef(() => {
     highlightToday();
-    selectorData.init(value, rangeType);
     if (value) {
       const date = new DateX(value);
+      selectorData.init(date, rangeType);
       contentData.init(date);
       switchRender();
     } else {
@@ -2077,6 +2140,8 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         case "less":
           date = new DateX(minDate as Date);
       }
+
+      selectorData.init(date, rangeType, "skipDay");
       contentData.init(date);
       switchRender();
     }
@@ -2184,7 +2249,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
     (value: Date, index: string) => {
       if (actionButton || rangeMode) {
         const prev = contentData.curr.toStringIndex().day;
-        selectorData.toggleActive(mode, prev, index);
+        selectorData.updateSelector(prev, index, value);
         contentData.set(new DateX(value));
       } else {
         const payload: any = value;
@@ -2192,7 +2257,7 @@ const CalendarCore: FC<CalendarCoreProps> = ({
         closeDropdown();
       }
     },
-    [actionButton, closeDropdown, contentData, mode, onChange, rangeMode, selectorData],
+    [actionButton, closeDropdown, contentData, onChange, rangeMode, selectorData],
   );
   const coreHandleSelector = useCallback(
     (value: Date | number, rangeType: RangeType, type: Mode, index: string) => {

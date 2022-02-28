@@ -7,9 +7,12 @@ export interface CoreProps {
   focused?: boolean;
   disabled?: boolean;
   border?: boolean;
-  cssCustom?: string;
+  className?: string;
   /**
    * Add CSS theme color class
+   *
+   * [Material Color Tools](https://material.io/resources/color/#!/?view.left=0&view.right=0)
+   *
    * @example
    * .myTheme {
    *--fontColor: #color;
@@ -25,15 +28,15 @@ export interface CoreProps {
    *}
    */
   themeColor?: string;
-  color?: PropColor;
+  color?: CoreColor;
   inputIcon?: ReactElement;
   helperText?: string | string[];
 }
 
-export type PropColor = "primary" | "accent" | "success" | "warn" | "error";
+export type CoreColor = "basic" | "primary" | "accent" | "success" | "warn" | "error";
 
 interface Core {
-  color: PropColor;
+  color: CoreColor;
   error: boolean;
   disabled: boolean;
   focused: boolean;
@@ -46,7 +49,7 @@ const ModuleCore: FC<CoreProps> = ({
   border = false,
   color = "primary",
   themeColor = "mod-theme",
-  cssCustom,
+  className,
   focused = false,
   disabled = false,
   error = false,
@@ -61,21 +64,21 @@ const ModuleCore: FC<CoreProps> = ({
   }
 
   function setCoreClass(
-    cssCustom?: string,
-    color?: PropColor,
+    className?: string,
+    color?: CoreColor,
     themeColor?: string,
     focused = false,
     disabled = false,
     error = false,
   ) {
-    let className = "mod-core";
-    if (error) className += " mod-error";
-    if (cssCustom) className += ` ${cssCustom}`;
-    if (themeColor) className += ` ${themeColor}`;
-    if (color) className += ` mod-${color}`;
-    if (focused) className += " focus";
-    if (disabled) className += " disabled";
-    return className;
+    let classname = "mod-core";
+    if (error) classname += " mod-error";
+    if (className) classname += ` ${className}`;
+    if (themeColor) classname += ` ${themeColor}`;
+    if (color) classname += ` mod-${color}`;
+    if (focused) classname += " focus";
+    if (disabled) classname += " disabled";
+    return classname;
   }
 
   return (
@@ -86,7 +89,7 @@ const ModuleCore: FC<CoreProps> = ({
         disabled,
         focused,
       }}>
-      <div className={setCoreClass(cssCustom, color, themeColor, focused, disabled, error)}>
+      <div className={setCoreClass(className, color, themeColor, focused, disabled, error)}>
         {renderBorder(border)}
         {helperText && (
           <HelperText color={color} focused={focused} disabled={disabled}>
@@ -100,7 +103,7 @@ const ModuleCore: FC<CoreProps> = ({
 export { ModuleCore };
 
 interface Props {
-  cssCustom?: string;
+  className?: string;
   color?: "main" | "warning" | "error" | "success";
   themeColor?: string;
   focused?: boolean;

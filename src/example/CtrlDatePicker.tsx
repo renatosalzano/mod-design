@@ -1,18 +1,15 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { DatePicker } from "../mod-design/core";
 
-interface Props {
-  name: string;
-}
-
 type RangeDate = {
   min: Date | null;
   max: Date | null;
 };
-const CtrlDatePicker: FC<Props> = ({ name }) => {
+const CtrlDatePicker: FC = () => {
   const [date, setDate] = useState<Date | null>(new Date());
 
   function handleDate(value: Date | null) {
+    console.log("DATE", value);
     setDate(value);
   }
 
@@ -21,7 +18,7 @@ const CtrlDatePicker: FC<Props> = ({ name }) => {
       name="DATEPICKER TEST"
       value={date}
       onChange={handleDate}
-      openTo="day"
+      openTo="year"
       minDate={new Date(2024, 1, 8)}
       maxDate={new Date(2028, 0, 15)}
       dateFormat="D/M/Y"

@@ -1,0 +1,13 @@
+.mat-buttons {
+  display: grid;
+  grid-template-columns: 100px 100px 100px 100px 100px 100px 100px;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+}
+
+.example {
+  .date-margin {
+    margin-bottom: 100px;
+  }
+}

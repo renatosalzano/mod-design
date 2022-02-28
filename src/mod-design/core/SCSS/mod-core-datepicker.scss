@@ -17,9 +17,6 @@
   }
 }
 
-.mod-datepicker-theme {
-}
-
 .mod-inputdate-wrap {
   display: flex;
   align-items: center;
@@ -38,9 +35,11 @@
     bottom: 0;
     width: var(--height);
     height: var(--height);
-    color: var(--calendarFontColor);
     cursor: pointer;
     z-index: 5000;
+    &.mod-active {
+      --buttonTextColor: var(--color);
+    }
   }
 }
 
@@ -76,16 +75,19 @@
 
   .mod-calendar-header-button {
     width: unset;
-  }
-
-  .mod-button {
-    font .mod-arrow-icon {
-      color: var(--idleColor);
-    }
+    height: 40px;
+    padding: 0 8px;
   }
 
   .mod-calendar-arrow {
     display: flex;
+    .mod-calendar-header-arrow {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 20px;
+      --rippleOpacity: 0.05;
+    }
   }
 }
 
@@ -95,12 +97,20 @@
   padding: 0 8px;
   border-bottom: 1px solid var(--hoverColor);
   user-select: none !important;
+
   .mod-insert-day {
     width: 40px;
     height: 20px;
     font-size: 11px;
     text-align: center;
     color: var(--idleColor);
+    transition: opacity ease 200ms;
+  }
+
+  &.mod-hide-weekday {
+    .mod-insert-day {
+      opacity: 0;
+    }
   }
 }
 
@@ -113,11 +123,13 @@
   height: 40px;
   width: 296px;
   margin-top: 8px;
-  padding: 0 14px;
+  padding: 0 16px;
   font-size: 14px;
   font-weight: 500;
-  font-family: var(--headerFont);
+  font-family: var(--contentFont);
   color: var(--contentHeaderColor);
+  user-select: none;
+  pointer-events: none;
 }
 
 .mod-temp-wrapper {
@@ -260,7 +272,7 @@
     font-family: var(--contentFont);
     letter-spacing: 2px;
     text-transform: uppercase;
-    transition: all 150ms ease-out;
+    transition: all 150ms ease;
     color: var(--fontColorSecondary);
     z-index: 2000;
     cursor: pointer;
@@ -400,7 +412,7 @@
     left: 2px;
     right: 2px;
     border-radius: 20px;
-    border: 1.5px var(--selectorBorderType) var(--selectorBorderColor);
+    border: 1px var(--selectorBorderType) var(--selectorBorderColor);
     opacity: 0.6;
     z-index: -1;
   }
@@ -422,7 +434,7 @@
     left: 0px;
     right: 0px;
     z-index: -3;
-    opacity: 0.3;
+    opacity: 0.2;
     background-color: var(--color);
 
     &.range-start-path-start,
@@ -454,18 +466,14 @@
     --selectorBackgroundOpacity: 1;
   }
 
-  &.mod-active,
-  &.mod-range-start-path-single,
-  &.mod-range-end-path-single {
+  /* &.mod-range-start-path-single,
+  &.mod-range-end-path-single */
+
+  &.mod-active {
     color: #fff;
     --selectorBackground: var(--color);
     --selectorBackgroundOpacity: 1;
   }
-  /* &.mod-active {
-    color: #fff;
-    --selectorBackground: var(--color);
-    --selectorBackgroundOpacity: 1;
-  } */
 
   &.mod-disabled {
     color: var(--calendarFontColor);

@@ -1,10 +1,12 @@
-.mod-button {
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap");
+
+.mod-core-button {
   position: relative;
   overflow: hidden;
   outline: none;
   border: none;
   user-select: none;
-  height: 40px;
+  min-height: 36px;
   padding: 0 16px;
   min-width: 36px;
   font-size: 14px;
@@ -15,6 +17,24 @@
   background-color: #00000000;
   transform: translate3d(0, 0, 0);
   transition: all ease-out 200ms;
+  &.mod-basic {
+    --color: var(--fontColor);
+  }
+  &.mod-primary {
+    --color: var(--primaryColor);
+  }
+  &.mod-accent {
+    --color: var(--accentColor);
+  }
+  &.mod-success {
+    --color: var(--successColor);
+  }
+  &.mod-warn {
+    --color: var(--warnColor);
+  }
+  &.mod-error {
+    --color: var(--errorColor);
+  }
   cursor: pointer;
   --buttonTextColor: var(--fontColor);
   --buttonBackground: transparent;
@@ -54,23 +74,20 @@
     opacity: var(--buttonBackgroundOpacity);
     background-color: var(--buttonBackground);
     transition: all 200ms ease;
-    z-index: -1;
+    z-index: -100;
   }
-  &.mod-raised {
-    box-shadow: var(--buttonShadow);
+  &.mod-raised-idle {
+    box-shadow: 0 3px 1px -2px #0003, 0 2px 2px #00000024, 0 1px 5px #0000001f;
   }
-  &.mod-shadow-idle {
-    --buttonShadow: 0 3px 1px -2px #0003, 0 2px 2px #00000024, 0 1px 5px #0000001f;
-  }
-  &.mod-shadow-blur {
-    --buttonShadow: 0 0 2px #0003, 0 0 4px #00000024, 0 0 8px #0000001f;
+  &.mod-raised-blur {
+    box-shadow: 0 0 2px #0003, 0 0 8px #00000024, 0 0 12px #0000001f;
   }
   &.mod-disabled {
     cursor: default;
     pointer-events: none;
-    color: var(--disabledColor);
-    background-color: transparent;
     border: 1px solid var(--disabledColor);
+    color: var(--disabledColor);
+    --buttonBackground: transparent;
   }
 }
 
@@ -82,21 +99,49 @@
 
 .mat-basic {
   font-weight: 500;
-  --buttonTextColor: var(--fontColor);
-  --buttonBackground: #bdbdbd;
+  --buttonTextColor: var(--color);
+  --buttonBackground: var(--color);
   --buttonBackgroundOpacity: 0;
-  --rippleOpacity: 0.2;
-  --rippleColor: #757575;
+  --rippleOpacity: 0.1;
+  --rippleColor: var(--color) !important;
   &:hover {
-    --buttonBackgroundOpacity: 0.1;
+    --buttonBackgroundOpacity: 0.05;
   }
 }
 
 .mat-flat {
-  color: var(--fontColorSecondary);
+  font-weight: 500;
   --buttonTextColor: var(--fontColorSecondary);
   --buttonBackground: var(--color);
   --buttonBackgroundOpacity: 1;
+  --rippleOpacity: 1;
+  transition: --buttonTextColor ease 200ms;
+  &.mod-text-light {
+    --buttonTextColor: #ffffff;
+    --rippleColor: #ffffff1a;
+  }
+  &.mod-text-dark {
+    --buttonTextColor: #000000de;
+    --rippleColor: #0000001a;
+  }
+  &.mod-basic {
+    --buttonTextColor: #000000de;
+    --rippleColor: #0000001a;
+    --buttonBackground: transparent;
+  }
+}
+
+.mat-fab {
+  padding: 0;
+  border-radius: 50%;
+  &.mod-basic {
+    --buttonTextColor: var(--fontColor);
+    --buttonBackground: #ffffff;
+    --rippleColor: #0000001a;
+  }
+  &:hover {
+    --buttonBackgroundOpacity: 0.05;
+  }
 }
 
 .mat-icon {
@@ -110,56 +155,6 @@
   --buttonBorderRadius: 50%;
   --rippleOpacity: 0.2;
   --rippleColor: var(--color);
-}
-
-.mod-hover {
-  color: var(--fontColor);
-  &:hover {
-    .mod-button-background {
-      background-color: var(--hoverColor);
-    }
-  }
-}
-
-/* 
-  MATERIAL ARROW
-*/
-
-.mod-arrow-shape {
-  box-sizing: unset;
-  display: block;
-  height: 7px;
-  width: 7px;
-  margin: 15.5px;
-  border-top: 2px solid var(--idleColor);
-  border-left: 2px solid var(--idleColor);
-  transform: rotate(-45deg);
-}
-
-.mod-arrow-R {
-  .mod-arrow-shape {
-    transform: rotate(135deg);
-  }
-}
-
-.mod-arrow-L,
-.mod-arrow-R,
-.mod-arrow-U,
-.mod-arrow-D {
-  outline: none;
-  border: none;
-  background-color: transparent;
-  padding: 0;
-  margin: 0;
-  width: 40px !important;
-  height: 40px !important;
-  --buttonBorderRadius: 20px;
-  transition: all ease-out 0.2s;
-  cursor: pointer;
-  &.mod-disabled {
-    opacity: 0.25;
-    pointer-events: none;
-  }
 }
 
 /* 
@@ -179,6 +174,7 @@
   pointer-events: none !important;
   user-select: none !important;
   animation: 250ms ease-in 1 forwards ripple-effect;
+  z-index: -10;
   &.ripple-end {
     animation: 200ms ease 1 forwards ripple-effect-end;
   }
